@@ -4,8 +4,37 @@ import { StatusCodes } from 'http-status-codes';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import router from './routes';
 import { Morgan } from './shared/morgen';
+import rateLimit from 'express-rate-limit';
+import ApiError from './errors/ApiError';
+import session from 'express-session';
+import requestIp from 'request-ip';
+import { handleChunkUpload } from './helpers/handleChunkUpload';
+import { fileStreamHandler } from './helpers/fileStreamingHelper';
 const app = express();
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req, res) => {
+        if (!req.clientIp) {
+            throw new ApiError(StatusCodes.BAD_REQUEST, 'Unable to determine client IP!');
+        }
+        return req.clientIp;
+    },
+    handler: (req, res, next, options) => {
+        throw new ApiError(options?.statusCode, `Rate limit exceeded. Try again in ${options.windowMs / 60000} minutes.`);
+    }
+});
 
+app.use(session({
+    secret: "your_secret_key",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Secure should be true in production with HTTPS
+}));
+app.use(requestIp.mw());
+app.use(limiter);
 //morgan
 app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
@@ -16,10 +45,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //file retrieve
+// app.use("/files/:folder/:file",fileStreamHandler);
 app.use(express.static('uploads'));
-
 //router
+app.post('/api/v1/upload/chunk', handleChunkUpload);
 app.use('/api/v1', router);
+
 
 //live response
 app.get('/', (req: Request, res: Response) => {

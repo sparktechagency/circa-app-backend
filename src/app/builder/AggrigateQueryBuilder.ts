@@ -24,9 +24,15 @@ class AggregateQueryBuilder<T> {
   }
 
 
-  filter() {
+  insertCustomStage(stage: PipelineStage[]) {
+    this.pipeline.push(...stage);
+    return this;
+  }
+
+
+  filter(excludeFieldss: string[] = []) {
     const queryObj = { ...this.query };
-    const excludeFields = ['searchTerm', 'sort', 'page', 'limit', 'fields'];
+    const excludeFields = ['searchTerm', 'sort', 'page', 'limit', 'fields', ...excludeFieldss];
     excludeFields.forEach(f => delete queryObj[f]);
 
     Object.keys(queryObj).forEach(key => {
