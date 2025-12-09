@@ -30,4 +30,5 @@ router
     UserController.createUser
   );
 
+router.route('/upload-file').post(fileUploadHandler(), UserController.uploadFile);
 export const UserRoutes = router;

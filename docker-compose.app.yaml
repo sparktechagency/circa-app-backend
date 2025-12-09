@@ -1,0 +1,50 @@
+services:
+  kong:
+    image: kong:latest
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
+    volumes:
+      - ./kong.yaml:/etc/kong/kong.yml
+    ports:
+      - '10.10.7.9:8000:8000'
+      - '8001:8001'
+    networks:
+      - template-network
+  default-service:
+    build: .
+    environment:
+      - PORT=5044
+      - DATABASE_URL=mongodb://mongo:27017/sample
+      - BACKUP_DATABASE_URL=mongodb://mongo:27017/sample
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_URL=kafka:9092
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - template-network
+    ports:
+      - '5044:5044'
+    volumes:
+    - shared-data:/app/uploads
+  asset-service:
+    build: .
+    environment:
+      - PORT=5043
+      - DATABASE_URL=mongodb://mongo:27017/sample
+      - BACKUP_DATABASE_URL=mongodb://mongo:27017/sample
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_URL=kafka:9092
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - template-network
+    ports:
+      - '5043:5043'
+    volumes:
+    - shared-data:/app/uploads
+volumes:
+  shared-data:
+networks:
+  template-network:
+    external: true

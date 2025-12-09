@@ -1,6 +1,7 @@
 import { Client } from '@elastic/elasticsearch';
+import config from '.';
 
 export const esClient = new Client({
-  node: 'http://localhost:9200',
+  node: config.elasticSearch.url,
 });
 

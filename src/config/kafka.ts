@@ -1,8 +1,9 @@
 import { Kafka } from 'kafkajs';
+import config from '.';
 
 const kafka = new Kafka({
   clientId: 'my-app',
-  brokers: ['localhost:9092'],
+  brokers: [config.kafka.url!],
   logLevel: 2,
 });
 

@@ -52,4 +52,14 @@ const updateProfile = catchAsync(
   }
 );
 
-export const UserController = { createUser, getUserProfile, updateProfile };
+const uploadFile = catchAsync(async (req: Request, res: Response) => {
+  const file = getSingleFilePath(req.files, 'image');
+  return sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'File uploaded successfully',
+    data: file,
+  })
+});
+
+export const UserController = { createUser, getUserProfile, updateProfile, uploadFile };

@@ -10,7 +10,9 @@ import session from 'express-session';
 import requestIp from 'request-ip';
 import { handleChunkUpload } from './helpers/handleChunkUpload';
 import { fileStreamHandler } from './helpers/fileStreamingHelper';
+import { handleStripeWebhook } from './webhooks/handleStripeWebhook';
 const app = express();
+// app.get("/stripe/webhook",express.raw({type:"application/json"}),handleStripeWebhook); /// stripe webhook
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 1000,
@@ -45,8 +47,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //file retrieve
-// app.use("/files/:folder/:file",fileStreamHandler);
-app.use(express.static('uploads'));
+app.use("/files/:folder/:file",fileStreamHandler);
+// app.use(express.static('uploads'));
 //router
 app.post('/api/v1/upload/chunk', handleChunkUpload);
 app.use('/api/v1', router);

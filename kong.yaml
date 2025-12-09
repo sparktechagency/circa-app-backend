@@ -1,0 +1,14 @@
+_format_version: '3.0'
+services:
+  - name: default-service
+    url: http://default-service:5044
+    routes:
+      - name: default-route
+        paths:
+          - /
+  - name: asset-service
+    url: http://asset-service:5043/files
+    routes:
+      - name: asset-route
+        paths:
+          - /files

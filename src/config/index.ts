@@ -5,6 +5,7 @@ dotenv.config({ path: path.join(process.cwd(), '.env') });
 export default {
   ip_address: process.env.IP_ADDRESS,
   database_url: process.env.DATABASE_URL,
+  backup_database_url: process.env.BACKUP_DATABASE_URL,
   node_env: process.env.NODE_ENV,
   port: process.env.PORT,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
@@ -27,4 +28,15 @@ export default {
     secret_key: process.env.STRIPE_API_SECRET,
     webhook_secret: process.env.WEBHOOK_SECRET,
   },
+
+  redis:{
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT
+  },
+  kafka:{
+    url: process.env.KAFKA_URL
+  },
+  elasticSearch: {
+    url: process.env.ELASTICSEARCH_URL
+  }
 };
