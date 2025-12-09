@@ -65,15 +65,27 @@ Ensure you have the following installed:
    yarn install
    ```
 
-3. **For use Docker up:**
+3. **For using the Docker services:**
 
-   Use Docker Compose:
+   First of all configure the docker-compose.app.yaml then run this code:
 
    ```bash
-   docker compose up
+   npm run docker-infra
+   ```
+4. **If you want to use the Contraise server:**
+
+   For the automatic load balancer, start running this command:
+
+   ```bash
+   npm run init-load
+   ```
+5. **Then start the server using command:**
+
+   ```bash
+   npm run docker-app
    ```
 
-4. **Create a `.env` file:**
+6. **Create a `.env` file:**
 
    In the root directory of the project, create a `.env` file and add the following variables. Adjust the values according to your setup.
 
@@ -120,7 +132,7 @@ Ensure you have the following installed:
 
    ```
 
-5. **Run the project:**
+7. **Run the project:**
 
    Using npm:
 
