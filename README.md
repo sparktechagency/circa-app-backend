@@ -79,28 +79,44 @@ Ensure you have the following installed:
 
    ```env
    # Basic
-   NODE_ENV=development
-   DATABASE_URL=mongodb://127.0.0.1:27017/project_name
-   IP_ADDRESS=192.0.0.0
+   NODE_ENV=production
+   DATABASE_URL=mongodb://mongo:27017/demo_db
+   BACKUP_DATABASE_URL=mongodb://mongo:27017/demo_db
+   IP_ADDRESS=0.0.0.0
    PORT=5000
 
+   # Redis
+   REDIS_HOST=redis
+   REDIS_PORT=6379
+
+   # Kafka
+   KAFKA_URL=kafka:9092
+
+   # Elasticsearch
+   ELASTICSEARCH_URL=http://elasticsearch:9200
+
    # Bcrypt
-   BCRYPT_SALT_ROUNDS=12
+   BCRYPT_SALT_ROUNDS=10
 
    # JWT
-   JWT_SECRET=jwt_secret
-   JWT_EXPIRE_IN=1d
+   JWT_SECRET=demo_jwt_secret_key
+   JWT_EXPIRE_IN=30d
 
-   # Email
-   EMAIL_FROM=email@gmail.com
-   EMAIL_USER=email@gmail.com
-   EMAIL_PASS=mkqcfjeqloothyax
+   # Email (Demo only)
+   EMAIL_FROM=demo@example.com
+   EMAIL_USER=demo@example.com
+   EMAIL_PASS=demo-email-password
    EMAIL_PORT=587
    EMAIL_HOST=smtp.gmail.com
 
-   # Stripe
-   STRIPE_API_SECRET =""
-   WEBHOOK_SECRET= ""
+   # Super Admin (Demo)
+   SUPER_ADMIN_EMAIL=admin@example.com
+   SUPER_ADMIN_PASSWORD=Admin@123
+
+   # Stripe (Demo)
+   STRIPE_API_SECRET=sk_test_demo123456789
+   WEBHOOK_SECRET=whsec_demo123456789
+
 
    ```
 
