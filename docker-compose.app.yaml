@@ -31,18 +31,6 @@ services:
       - '5043:5043'
     volumes:
       - shared-data:/app/uploads
-  auth-service:
-    build: .
-    ports:
-      - '5973:5973'
-    environment:
-      - PORT=5973
-    networks:
-      - template-network
-    depends_on:
-      - kong
-    volumes:
-      - shared-data:/app/uploads
 
 volumes:
   shared-data: null
