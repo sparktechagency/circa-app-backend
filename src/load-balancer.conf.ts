@@ -127,7 +127,7 @@ async function run() {
         ports: [`${port}:${port}`],
         environment: [
           `PORT=${port}`,
-          `DATABASE_URL=mongodb://mongo:27017/embay`,
+          `DATABASE_URL=mongodb://root:1@mongo:27017/embay?authSource=admin`,
           `BACKUP_DATABASE_URL=mongodb://mongo:27017/embay`,
           `REDIS_HOST=redis`,
           `REDIS_PORT=6379`,

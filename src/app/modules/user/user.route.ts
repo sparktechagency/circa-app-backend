@@ -9,9 +9,9 @@ const router = express.Router();
 
 router
   .route('/profile')
-  .get(auth(USER_ROLES.ADMIN, USER_ROLES.USER), UserController.getUserProfile)
+  .get(auth(USER_ROLES.ADMIN, USER_ROLES.FAN, USER_ROLES.CREATOR), UserController.getUserProfile)
   .patch(
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.FAN, USER_ROLES.CREATOR),
     fileUploadHandler(),
     (req: Request, res: Response, next: NextFunction) => {
       if (req.body.data) {
@@ -29,6 +29,43 @@ router
     validateRequest(UserValidation.createUserZodSchema),
     UserController.createUser
   );
+
+router
+  .route('/apply-for-creator')
+  .post(
+    auth(USER_ROLES.FAN),
+    fileUploadHandler(),
+    validateRequest(UserValidation.applyForBeACreatorZodSchema),
+    UserController.applyForBeACreator
+  );
+
+router
+  .route('/creator-requests')
+  .get(auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), UserController.getALlCreatorRequests);
+
+router
+  .route('/creator-requests/:id')
+  .patch(auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),validateRequest(UserValidation.changeStatusOfCreatorRequestZodSchema) ,UserController.changeStatusOfCreatorRequest);
+
+router
+  .route('/creator')
+  .get(auth(USER_ROLES.FAN), UserController.getCreatorList);
+router.route("/my-creator").get(auth(USER_ROLES.FAN), UserController.getMyCreatorList);
+router.get("/friend-flirty", auth(USER_ROLES.FAN),validateRequest(UserValidation.getFriendsAndFlattersListZodSchema),UserController.getFriendsAndFlattersList);
+
+router.route("/block")
+    .post(auth(),validateRequest(UserValidation.blockUserZodSchema),UserController.blockUser)
+    .get(auth(),UserController.getBlockList)
+
+router.route("/report")
+    .post(auth(),validateRequest(UserValidation.reportUserZodSchema),UserController.reportUser)
+    .get(auth(USER_ROLES.ADMIN,USER_ROLES.SUPER_ADMIN),UserController.getReportList)
+
+
+
+
+router.route("/creator/:id").get(auth(USER_ROLES.FAN), UserController.getCreatorProfile);
+
 
 router.route('/upload-file').post(fileUploadHandler(), UserController.uploadFile);
 export const UserRoutes = router;

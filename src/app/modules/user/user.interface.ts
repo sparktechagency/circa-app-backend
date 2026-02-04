@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { USER_ROLES } from '../../../enums/user';
 
 export type IUser = {
@@ -7,10 +7,12 @@ export type IUser = {
   contact: string;
   email: string;
   password: string;
-  location: string;
   image?: string;
   status: 'active' | 'delete';
   verified: boolean;
+  gender ?: string;
+  date_of_birth ?: Date;
+  age ?: number;
   authentication?: {
     isResetPassword: boolean;
     oneTimeCode: number;
@@ -23,3 +25,42 @@ export type UserModal = {
   isExistUserByEmail(email: string): any;
   isMatchPassword(password: string, hashPassword: string): boolean;
 } & Model<IUser>;
+
+export type ICreator = {
+  categories: Types.ObjectId[];
+  friends_and_flirty_mode: boolean;
+  friends_and_flirty_category:"Friends" | "Flirty" | "Passonate",
+  username: string;
+  date_of_birth: Date,
+  short_bio: string,
+  document: string,
+  age: number
+}
+
+export type CreatorModel = Model<ICreator>;
+
+
+export type ICreatorRequest = ICreator &{
+  user:Types.ObjectId,
+  status:"Pending" | "Approved" | "Rejected"
+}
+
+export type CreatorRequestModel = Model<ICreatorRequest>;
+
+
+export type IBlock = {
+  user: Types.ObjectId;
+  blocked_by: Types.ObjectId;
+  status: 'active' | 'delete';
+};
+
+export type BlockModel = Model<IBlock>;
+
+export type IReport = {
+  user: Types.ObjectId;
+  reported_by: Types.ObjectId;
+  reason: string;
+  status: 'active' | 'delete';
+};
+
+export type ReportModel = Model<IReport>;

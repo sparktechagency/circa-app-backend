@@ -2,7 +2,7 @@ import kafka from "../../../config/kafka";
 
 
 export const kafkaProducer = {
-    sendMessage: async (topic: string, message: any) => {
+    sendMessage: async <T>(topic: string, message: T) => {
         const producer = kafka.producer();
         await producer.connect();
         await producer.send({

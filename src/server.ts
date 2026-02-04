@@ -39,7 +39,7 @@ export async function main() {
 
         // Seed super admin
         await seedSuperAdmin();
-      // loadConsumer() // if you  yse kafka
+      loadConsumer() // if you  yse kafka
 
         // Start HTTP server
         const port = typeof config.port === 'number' ? config.port : Number(config.port);

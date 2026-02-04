@@ -4,9 +4,9 @@ import { model, Schema } from 'mongoose';
 import config from '../../../config';
 import { USER_ROLES } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
-import { IUser, UserModal } from './user.interface';
+import { BlockModel, CreatorModel, CreatorRequestModel, IBlock, ICreator, ICreatorRequest, IReport, IUser, ReportModel, UserModal } from './user.interface';
 
-const userSchema = new Schema<IUser, UserModal>(
+const userSchema = new Schema<IUser , UserModal>(
   {
     name: {
       type: String,
@@ -29,9 +29,13 @@ const userSchema = new Schema<IUser, UserModal>(
       select: 0,
       minlength: 8,
     },
+    contact: {
+      type: String,
+      required: true,
+    },
     image: {
       type: String,
-      default: 'https://i.ibb.co/z5YHLV9/profile.png',
+      default: '/asset/default.jpg',
     },
     status: {
       type: String,
@@ -59,8 +63,18 @@ const userSchema = new Schema<IUser, UserModal>(
       },
       select: 0,
     },
+    gender: {
+      type: String,
+    },
+    date_of_birth: {
+      type: Date,
+    },
+    age: {
+      type: Number,
+    },
+    
   },
-  { timestamps: true }
+  { timestamps: true,discriminatorKey: 'role' }
 );
 
 //exist user check
@@ -99,3 +113,137 @@ userSchema.pre('save', async function (next) {
 });
 
 export const User = model<IUser, UserModal>('User', userSchema);
+export const Fan = User.discriminator('FAN', new Schema({},{timestamps: true}));
+export const Admin = User.discriminator('ADMIN', new Schema({},{timestamps: true}));
+export const SuperAdmin = User.discriminator('SUPER_ADMIN', new Schema({},{timestamps: true}));
+
+
+
+// Creator Schema
+const creatorSchema = new Schema<IUser&ICreator, UserModal>({
+  username: {
+    type: String,
+    required: false,
+    default: '',
+  },
+  date_of_birth: {
+    type: Date,
+    required: false,
+    default: null,
+  },
+  short_bio: {
+    type: String,
+    required: false,
+    default: '',
+  },
+  age: {
+    type: Number,
+    required: false,
+    default: 0,
+  },
+  document: {
+    type: String,
+    required: false,
+    default: '',
+  },
+  categories: {
+    type: [Schema.Types.ObjectId],
+    ref: 'Category',
+    default: [],
+  },
+  friends_and_flirty_mode: {
+    type: Boolean,
+    required: false,
+  },
+  friends_and_flirty_category: {
+    type: String,
+    required: false,
+  },
+
+},{timestamps: true});
+creatorSchema.index({categories: 1});
+
+export const Creator = User.discriminator('CREATOR', creatorSchema);
+
+
+const creatorRequestSchema = new Schema<ICreatorRequest,CreatorRequestModel>({
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  status: {
+    type: String,
+    enum: ['Pending', 'Approved', 'Rejected'],
+    default: 'Pending',
+  },
+  categories: {
+    type: [Schema.Types.ObjectId],
+    ref: 'Category',
+    default: [],
+  },
+  date_of_birth: {
+    type: Date,
+    required: false,
+    default: null,
+  },
+  document: {
+    type: String,
+    required: false,
+    default: '',
+  },
+  friends_and_flirty_category: {
+    type: String,
+    required: false,
+  
+  },
+  friends_and_flirty_mode: {
+    type: Boolean,
+    required: false,
+    default: false
+  },
+  short_bio: {
+    type: String,
+    required: false,
+    default: '',
+  },
+  username: {
+    type: String,
+    required: false,
+    default: '',
+  }
+},{timestamps: true});
+
+export const CreatorRequest = model<ICreatorRequest,CreatorRequestModel>('CreatorRequest', creatorRequestSchema);
+
+
+const blockSchema = new Schema<IBlock,BlockModel>({
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  blocked_by: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+},{timestamps: true});
+blockSchema.index({user:1})
+blockSchema.index({blocked_by:1,user:1},{unique:true})
+export const Block = model<IBlock,BlockModel>('Block', blockSchema);
+
+const reportSchema = new Schema<IReport,ReportModel>({
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  reported_by: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  reason: {
+    type: String,
+  },
+},{timestamps: true});
+reportSchema.index({user:1})
+export const Report = model<IReport,ReportModel>('Report', reportSchema);
+
+

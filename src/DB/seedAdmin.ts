@@ -8,6 +8,7 @@ const payload = {
   email: config.super_admin.email,
   role: USER_ROLES.SUPER_ADMIN,
   password: config.super_admin.password,
+  contact: '1234567890',
   verified: true,
 };
 

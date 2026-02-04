@@ -1,4 +1,6 @@
+import { User } from "../../app/modules/user/user.model";
 import { redisClient } from "../../config/redis";
+import { USER_ROLES } from "../../enums/user";
 
 const redisSet = async (key: string, value: any, query?: Record<string, any>, ttl: number=60) => {
   const queryString = new URLSearchParams(query as Record<string, string>).toString();
@@ -59,6 +61,16 @@ const HKeyDelete = async (key: string) => {
   await redisClient.hdel(key, ...fields);
 };
 
+const adminKeyDelete = async (pattern: string) => {
+  const admins = await User.find({role:{$in:[USER_ROLES.SUPER_ADMIN,USER_ROLES.ADMIN]}}).distinct('_id');
+  if(!admins?.length) return;
+  const keys = admins.map((admin)=>`${pattern}:${admin._id}:*`);
+  for(const key of keys){
+    await keyDelete(key);
+  }
+
+}
+
 export const RedisHelper = {
   redisSet,
   redisGet,
@@ -66,4 +78,5 @@ export const RedisHelper = {
   redisHget,
   keyDelete,
   HKeyDelete,
+  adminKeyDelete
 };
