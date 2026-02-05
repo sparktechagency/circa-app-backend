@@ -17,6 +17,7 @@ import { RedisHelper } from '../../../tools/redis/redis.helper';
 import { Subscription } from '../subscription/subscription.model';
 import { Post } from '../post/post.model';
 import { Favorite } from '../favorite/favorite.model';
+import { Chat } from '../chat/chat.model';
 
 const createUserToDB = async (payload: Partial<IUser>, res: Response) => {
   payload.role = USER_ROLES.FAN;
@@ -359,10 +360,12 @@ const blockUserIntoDB = async (user: JwtPayload, id: string) => {
   const block = await Block.findOne({ blocked_by: user.id, user: id }).lean();
   if (block) {
     await Block.findOneAndDelete({ blocked_by: user.id, user: id });
+    await Chat.findOneAndUpdate({ participants: { $all: [user.id, id] } }, { status: 'active' });
     return;
   }
 
   await Block.create({ blocked_by: user.id, user: id });
+  await Chat.findOneAndUpdate({ participants: { $all: [user.id, id] } }, { status: 'block' ,blockReason:"blocked by user"});
 };
 
 const getBlockList = async (user: JwtPayload, query: Record<string, any>) => {

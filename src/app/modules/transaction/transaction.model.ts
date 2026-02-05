@@ -52,7 +52,7 @@ const transactionSchema = new Schema<ITransaction, TransactionModel>({
   status: {
     type: String,
     enum: Object.values(TRANSACTION_STATUS),
-    default: TRANSACTION_STATUS.PENDING,
+    default: TRANSACTION_STATUS.SUCCESS,
   },
   type: {
     type: String,

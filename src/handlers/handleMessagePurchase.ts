@@ -7,6 +7,7 @@ import { Transaction } from "../app/modules/transaction/transaction.model";
 import { TRANSACTION_CATEGORY, TRANSACTION_TYPE } from "../enums/transaction";
 import { kafkaProducer } from "../tools/kafka/kafka-producers/kafka.producer";
 import { INotification } from "../app/modules/notification/notification.interface";
+import { WalletServices } from "../app/modules/wallet/wallet.service";
 
 export const handleMessagePurchase = async (messageSession:IMessageSession) => {
     const session = await mongoose.startSession();
@@ -27,8 +28,10 @@ export const handleMessagePurchase = async (messageSession:IMessageSession) => {
         if (!user) {
             throw new Error('User not found');
         }
-        await CreditWallet.findOneAndUpdate({ user: fan }, { $inc: { credit: -5 } }).session(session);
+       
         await Promise.all([
+            CreditWallet.findOneAndUpdate({ user: fan }, { $inc: { credit: -5 } }).session(session),
+            WalletServices.updateBalanceOfCreator(creator as any,5,session),
             Transaction.create([{
                 user: fan,
                 total_price:0,

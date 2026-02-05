@@ -7,4 +7,6 @@ const router = express.Router();
 
 router.route('/subscribe/:id')
     .post(auth(USER_ROLES.FAN),SubscriptionController.purchasePlanFromStripe)
+    .get(auth(USER_ROLES.FAN),SubscriptionController.getSubscription)
+router.route("/creators").get(auth(USER_ROLES.FAN),SubscriptionController.getAllSubscriptions)
 export const SubscriptionRoutes = router;

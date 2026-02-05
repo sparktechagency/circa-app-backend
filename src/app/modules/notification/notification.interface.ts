@@ -6,7 +6,7 @@ export type INotification = {
   message: string;
   isRead: boolean;
   createdAt?: Date;
-  filePath?: "application" | "user" | "post" | "product" | "order" |'plan' | 'favorite' | 'message'
+  filePath?: "application" | "user" | "post" | "product" | "order" |'plan' | 'favorite' | 'message' | "gift"
   referenceId?: Types.ObjectId;
   readers?: Types.ObjectId[];
 };

@@ -14,7 +14,31 @@ const purchasePlanFromStripe = catchAsync(async (req: Request, res: Response) =>
 });
 
 
+const getSubscription = catchAsync(async (req: Request, res: Response) => {
+    const result = await SubscriptionServices.getSubscription(req.user,req.params.id);
+    sendResponse(res, {
+        success: true,
+        statusCode: 200,
+        message: 'Subscription data retrieved successfully',
+        data: result,
+    });
+});
+
+const getAllSubscriptions = catchAsync(async (req: Request, res: Response) => {
+    const result = await SubscriptionServices.getMySubscriptionCreators(req.user,req.query);
+    sendResponse(res, {
+        success: true,
+        statusCode: 200,
+        message: 'Subscription data retrieved successfully',
+        data: result.subscriptions,
+        pagination: result.pagination
+    });
+});
+
+
 
 export const SubscriptionController = {
-    purchasePlanFromStripe
+    purchasePlanFromStripe,
+    getSubscription,
+    getAllSubscriptions
 };

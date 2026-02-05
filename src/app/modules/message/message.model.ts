@@ -18,8 +18,8 @@ const messageSchema = new Schema<IMessage, MessageModel>(
       required: false 
     },
     image: { 
-    type: [String],
-      required: false 
+    type: String,
+    required: false,
     },
     seenBy: [
       {
@@ -33,9 +33,18 @@ const messageSchema = new Schema<IMessage, MessageModel>(
     }],
     type:{
       type:String,
-      enum:['text','image','document','zoom-link'],
+      enum:['text','image','document','zoom-link','gift'],
       required:false,
       default:'text'
+    },
+    acctualImage:{
+      type:String,
+      required:false,
+      select:false
+    },
+    gift: {
+      type: Schema.Types.ObjectId,
+      ref: 'Gift',
     },
   },
   {
@@ -69,4 +78,4 @@ const messageSessionSchema = new Schema<IMessageSession, MessageModel>({
 }, { timestamps: true });
 
 
-export const MessageSession = model<IMessageSession, MessageModel>('MessageSession', messageSessionSchema);
+export const MessageSession = model<IMessageSession>('MessageSession', messageSessionSchema);

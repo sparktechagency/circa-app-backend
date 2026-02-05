@@ -10,12 +10,16 @@ const chatSchema = new Schema<IChat, ChatModel>(
             }
         ],
         status: {
-            type: Boolean,
-            default: true
+            type: String,
+            enum: ['active', 'delete', 'block', 'warning'],
+            default: 'active'
         },
         isAdminChat: {
             type: Boolean,
             default: false
+        },
+        blockReason: {
+            type: String
         }
     },{
         timestamps: true

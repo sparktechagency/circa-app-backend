@@ -1,5 +1,6 @@
 
 import { USER_ROLES } from "../../../enums/user";
+import { RedisHelper } from "../../../tools/redis/redis.helper";
 import { User } from "../user/user.model";
 import { IMessage } from "./message.interface";
 
@@ -15,6 +16,19 @@ const sendSocketMessageToAdmins = async (message:IMessage)=>{
         });
     }
 }
+
+const addMessageToCache = async (message:IMessage)=>{
+    const cache = await RedisHelper.redisGet(`messages:${message?.chatId}`, {});
+    console.log(cache);
+    
+    if(cache){
+        await RedisHelper.redisSet(`messages:${message?.chatId}`, {
+            messages: [...cache.messages, message],
+            pagination: cache.pagination
+        }, {}, 240);
+    }
+}
 export const MessageHelper = {
-    sendSocketMessageToAdmins
+    sendSocketMessageToAdmins,
+    addMessageToCache
 }

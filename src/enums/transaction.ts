@@ -15,5 +15,6 @@ export enum TRANSACTION_CATEGORY {
     DIPOSIT = 'Deposit',
     WITHDRAW = 'Withdraw',
     POST = 'Post',
-    CHAT = 'Chat'
+    CHAT = 'Chat',
+    GIFT = 'Gift'
 }

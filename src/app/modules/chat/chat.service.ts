@@ -8,6 +8,8 @@ import { Subscription } from '../subscription/subscription.model';
 import { IPlan } from '../plan/plan.interface';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
+import { RedisHelper } from '../../../tools/redis/redis.helper';
+import { GiftSend } from '../gift/gift.model';
 
 const createChatToDB = async (payload: any,user:JwtPayload): Promise<IChat> => {
     const isExistChat: IChat | null = await Chat.findOne({
@@ -28,6 +30,8 @@ const createChatToDB = async (payload: any,user:JwtPayload): Promise<IChat> => {
 }
 
 const getChatFromDB = async (user: JwtPayload, search: string): Promise<IChat[]> => {
+    const cache = await RedisHelper.redisGet(`myChats:${user.id}`,{search});
+    if (cache) return cache;
     let initQuery =  { participants:{$in:[user.id]} }
     const chats: any = await Chat.find(initQuery)
         .populate({
@@ -54,17 +58,19 @@ const getChatFromDB = async (user: JwtPayload, search: string): Promise<IChat[]>
             const lastMessage: IMessage | null = await Message.findOne({ chatId: chat?._id })
             .sort({ createdAt: -1 })
             .select('text createdAt sender');
+               const gift = (await GiftSend.findOne({chatId:chat?._id,createdAt:{$gt:new Date(Date.now() - (1000 * 60 * 60 * 24))}},{gift:1}).populate('gift','name image credit').lean())?.gift as any
     
             return {
                 ...data,
                 participants:data.participants[0],
                 lastMessage: lastMessage || null,
                 plan:subscription,
-                unreadMessages
+                unreadMessages,
+                gift
             };
         })
     );
-    
+    await RedisHelper.redisSet(`myChats:${user.id}`,chatList,{search},60*60*1);
     return chatList;
 };
 

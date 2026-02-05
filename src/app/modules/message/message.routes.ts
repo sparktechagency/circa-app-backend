@@ -18,6 +18,7 @@ router.post(
 );
 
 router.post("/purchase/:id",auth(),MessageController.buyMessage)
+router.post("/purchase-image/:id",auth(),MessageController.buyImage)
 router.get(
   '/:id',
   auth(),

@@ -13,6 +13,8 @@ import { SubscriptionRoutes } from '../app/modules/subscription/subscription.rou
 import { FavoriteRoutes } from '../app/modules/favorite/favorite.route';
 import { ChatRoutes } from '../app/modules/chat/chat.routes';
 import { MessageRoutes } from '../app/modules/message/message.routes';
+import { GiftRoutes } from '../app/modules/gift/gift.route';
+import { EventRoutes } from '../app/modules/event/event.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -71,6 +73,14 @@ const apiRoutes = [
   {
     path:"/message",
     route:MessageRoutes
+  },
+  {
+    path:'/gift',
+    route:GiftRoutes
+  },
+  {
+    path:"/event",
+    route:EventRoutes
   }
 ];
 

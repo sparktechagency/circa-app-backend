@@ -5,6 +5,8 @@ import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
 import stripe from '../../../config/stripe';
 import { Subscription } from './subscription.model';
+import { RedisHelper } from '../../../tools/redis/redis.helper';
+import QueryBuilder from '../../builder/QueryBuilder';
 
 const purchasePlanFromStripe = async (user:JwtPayload,planId:string) => {
     const plan = await Plan.findById(planId);
@@ -50,7 +52,37 @@ const purchasePlanFromStripe = async (user:JwtPayload,planId:string) => {
     return session.url
 };
 
+const getSubscription = async (user:JwtPayload,creatorId:string) => {
+    const cache = await RedisHelper.redisGet(`subscription:${user.id}:${creatorId}`);
+    if (cache) return cache;
+    const result = await Subscription.findOne({ user: user.id , status: 'active',creator:creatorId }).lean();
+    await RedisHelper.redisSet(`subscription:${user.id}:${creatorId}`, result, {}, 240);
+    return result;
+}
+
+
+const getMySubscriptionCreators = async (user:JwtPayload,query:Record<string,any>) => {
+    const cache = await RedisHelper.redisGet(`creatorList:${user.id}`, query);
+    if (cache) return cache;
+    const subscrionsQuery = new QueryBuilder(Subscription.find({ user: user.id, status: 'active' }), query).paginate().sort().filter();
+
+    let [subscriptions, pagination] = await Promise.all([
+        subscrionsQuery.modelQuery
+            .populate('creator', 'name email image short_bio date_of_birth age')
+            .lean()
+            .exec(),
+        subscrionsQuery.getPaginationInfo(),
+    ]);
+    subscriptions = subscriptions.map((subscription: any) => subscription.creator);
+    await RedisHelper.redisSet(`creatorList:${user.id}`, { subscriptions, pagination }, query, 240);
+    return { subscriptions, pagination };
+}
+
+
+
 
 export const SubscriptionServices = { 
-    purchasePlanFromStripe
+    purchasePlanFromStripe,
+    getSubscription,
+    getMySubscriptionCreators
 };
