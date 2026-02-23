@@ -64,12 +64,12 @@ subscriptionSchema.index({ creator: 1,user:1 });
 
 subscriptionSchema.pre('save', async function (next) { 
   const planInfo = await SubscriptionHelper.calculateTheTime(this.plan as any);
-  this.start_date = planInfo.startDate;
-  this.end_date = planInfo.endDate;
+  this.start_date =this.start_date || planInfo.startDate;
+  this.end_date =this.end_date || planInfo.endDate;
   this.price = planInfo?.plan?.price||0
   this.features = planInfo?.plan?.features||[],
   this.name = planInfo?.plan?.name||''
-  this.creator = planInfo?.plan?.user as any
+  this.creator =this.creator || planInfo?.plan?.user as any
   this.recuring = planInfo?.plan?.category
   next();
 });

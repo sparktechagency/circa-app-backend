@@ -8,6 +8,8 @@ import { StatusCodes } from 'http-status-codes';
 import { Event } from '../event/event.model';
 import { CreditWallet } from '../wallet/wallet.model';
 import { kafkaProducer } from '../../../tools/kafka/kafka-producers/kafka.producer';
+import { User } from '../user/user.model';
+import { INotification } from '../notification/notification.interface';
 
 const createGiftIntoDb = async (gift: IGift): Promise<IGift> => {
     const result = await Gift.create(gift);
@@ -85,11 +87,53 @@ const sendGiftToCreators = async (user:JwtPayload,giftDetails:ISendGiftPayload)=
 
 }
 
+const sendWowGiftToCreators = async (user:JwtPayload,creatorId:string)=>{
+    const wowGift = await Gift.findOne({name:'WOW',status:'delete'});
+    if(!wowGift){
+        throw new ApiError(StatusCodes.NOT_FOUND, 'WOW Gift not found');
+    }
+     const total = wowGift.credit
+
+    const creditWallet = await CreditWallet.findOne({user:user.id}).exec();
+
+    if(!creditWallet || creditWallet.credit < total){
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'You don\'t have enough credits');
+    }
+    const userInfo = await User.findById(user.id);
+    if(!userInfo){
+        throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+    }
+
+    await kafkaProducer.sendMessage("utils",{
+        type:"notification",
+        data:{
+            title:`${userInfo.name} has sent you a WOW gift`,
+            message:`${userInfo.name} has sent you a WOW gift`,
+            isRead:false,
+            filePath:'gift',
+            referenceId:wowGift._id,
+            receiver:[creatorId as any],
+        } as INotification,
+    })
+
+    await kafkaProducer.sendMessage("chat",{
+        type:"send-gift",
+        data:{
+            gift:{
+                gift:wowGift._id,
+                receivers:[creatorId as any],
+            },
+            user:user.id
+        } 
+    })
+}
+
 
 export const GiftServices = {
     createGiftIntoDb,
     getGiftsFromDB,
     updateGiftIntoDb,
     deleteGiftFromDB,
-    sendGiftToCreators
+    sendGiftToCreators,
+    sendWowGiftToCreators
 };

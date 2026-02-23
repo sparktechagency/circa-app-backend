@@ -16,6 +16,11 @@ const walletSchema = new Schema<IWallet, WalletModel>({
     type: Schema.Types.ObjectId,
     ref: 'User',
   },
+  draft_balance: {
+    type: Number,
+    required: false,
+    default: 0
+  },
   last_transaction_id: {
     type: String,
   }

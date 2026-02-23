@@ -21,6 +21,11 @@ const postSchema = new Schema<IPost, PostModel>({
     required: false,
     default: [],
   },
+  video: {
+    type: String,
+    required: false,
+    default: '',
+  },
   who_can_see: {
     type: String,
     enum: Object.values(WHO_CAN_SEE_STATUS),
@@ -47,7 +52,7 @@ const postSchema = new Schema<IPost, PostModel>({
   },
   status: {
     type: String,
-    enum: ['active', 'delete'],
+    enum: ['active', 'delete', 'draft'],
     default: 'active',
   },
   schedule_post: {

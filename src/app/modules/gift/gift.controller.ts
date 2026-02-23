@@ -66,10 +66,21 @@ const sendGiftToCreators = catchAsync(async (req: Request, res: Response) => {
     });
 })
 
+const sendWowGiftToCreators = catchAsync(async (req: Request, res: Response) => {
+    const result = await GiftServices.sendWowGiftToCreators(req.user, req.params.id);
+    sendResponse(res, {
+        success: true,
+        statusCode: 200,
+        message: 'Gift sent successfully',
+        data: result,
+    });
+})
+
 export const GiftController = {
     createGift,
     getAllGifts,
     updateGift,
     deleteGift,
-    sendGiftToCreators
+    sendGiftToCreators,
+    sendWowGiftToCreators
 };

@@ -6,15 +6,16 @@ export type IPost = {
   title:string,
   description:string,
   images?:string[],
+  video?:string,
   who_can_see:WHO_CAN_SEE_STATUS,
   post_visibility:POST_VISIBILITY[],
   like_count:number,
   comment_count:number,
   is_18_plus:boolean,
-  status:"active" | "delete"
+  status:"active" | "delete" | "draft",
   schedule_post:boolean,
   scdule_date?:Date,
-  schedule_time?:string
+  schedule_time?:string,
 };
 
 export type PostModel = Model<IPost>;

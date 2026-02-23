@@ -198,6 +198,17 @@ const getReportList = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const createConnectedAccount = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.createConnectedAccount(req.user);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Connected account created successfully',
+    data: result,
+  });
+});
+
 export const UserController = {
   createUser,
   getUserProfile,
@@ -213,5 +224,6 @@ export const UserController = {
   blockUser,
   getBlockList,
   reportUser,
-  getReportList
+  getReportList,
+  createConnectedAccount
 };

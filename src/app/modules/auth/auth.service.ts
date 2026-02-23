@@ -18,6 +18,7 @@ import { ResetToken } from '../resetToken/resetToken.model';
 import { User } from '../user/user.model';
 import { Response } from 'express';
 import { AuthHelper } from './auth.helper';
+import { kafkaProducer } from '../../../tools/kafka/kafka-producers/kafka.producer';
 
 //login
 const loginUserFromDB = async (payload: ILoginData,res:Response) => {
@@ -50,6 +51,10 @@ const loginUserFromDB = async (payload: ILoginData,res:Response) => {
     !(await User.isMatchPassword(password, isExistUser.password))
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect!');
+  }
+
+  if(payload.fcmToken){
+    await User.findOneAndUpdate({ email }, { $addToSet: { fcm_tokens: payload.fcmToken } });
   }
 
   //create token
@@ -122,6 +127,24 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
       { verified: true, authentication: { oneTimeCode: null, expireAt: null } }
     );
     message = 'Email verify successfully';
+    const token = jwtHelper.createToken(
+      {
+        id: isExistUser._id,
+        role: isExistUser.role,
+        email: isExistUser.email,
+      },
+      config.jwt.jwt_secret as Secret,
+      config.jwt.jwt_expire_in as string
+    )
+    data = { accessToken: token, path:"/"}
+    const emailTemplat = emailTemplate.welcomeMessage({
+      email: isExistUser.email,
+      name: isExistUser.name,
+    })
+    await kafkaProducer.sendMessage('utils', {
+      type: 'email',
+      data: emailTemplat,
+    });
   } else {
     await User.findOneAndUpdate(
       { _id: isExistUser._id },
@@ -143,7 +166,7 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
     });
     message =
       'Verification Successful: Please securely store and utilize this code for reset password';
-    data = createToken;
+    data = {accessToken:createToken,path:"/reset-password" };
   }
   return { data, message };
 };

@@ -41,5 +41,7 @@ export default {
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY
-  }
+  },
+  cron_job:process.env.CRON_JOB=='true'
+  
 };

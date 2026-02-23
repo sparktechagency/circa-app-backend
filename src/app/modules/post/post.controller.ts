@@ -113,7 +113,7 @@ const seePostByCredits = catchAsync(async (req: Request, res: Response) => {
 
 const likePostIntoDB = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    await kafkaProducer.sendMessage("post", {type:"like-post",data:{
+    await kafkaProducer.sendMessage("post-circa", {type:"like-post",data:{
         user: req.user.id,
         ...(req.body?.type =="post"?{post: id}:{comment: id}),
         for: req.body?.type

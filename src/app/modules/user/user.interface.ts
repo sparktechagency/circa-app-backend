@@ -14,6 +14,8 @@ export type IUser = {
   gender ?: string;
   date_of_birth ?: Date;
   age ?: number;
+  fcm_tokens ?: string[];
+  document ?: string;
   authentication?: {
     isResetPassword: boolean;
     oneTimeCode: number;
@@ -35,7 +37,11 @@ export type ICreator = {
   date_of_birth: Date,
   short_bio: string,
   document: string,
-  age: number
+  age: number,
+  stripe_login_link?: string,
+  stripe_account_id?: string,
+  amazon_wishlist_link?: string,
+  nickname ?: string
 }
 
 export type CreatorModel = Model<ICreator>;
@@ -65,3 +71,6 @@ export type IReport = {
 };
 
 export type ReportModel = Model<IReport>;
+
+
+

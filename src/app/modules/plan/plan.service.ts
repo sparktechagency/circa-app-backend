@@ -1,16 +1,20 @@
 import { JwtPayload } from 'jsonwebtoken';
 import { kafkaProducer } from '../../../tools/kafka/kafka-producers/kafka.producer';
 import { INotification } from '../notification/notification.interface';
-import { User } from '../user/user.model';
+import { Creator, User } from '../user/user.model';
 import { IPlan, PlanModel } from './plan.interface';
 import { Plan } from './plan.model';
 import { RedisHelper } from '../../../tools/redis/redis.helper';
 import { FEATURES_LIST_STATUS } from '../../../enums/features';
+import ApiError from '../../../errors/ApiError';
+import { StatusCodes } from 'http-status-codes';
+import { Subscription } from '../subscription/subscription.model';
 
 
 const createPlanOFUserInDB = async (data: IPlan) => {
+      const user = await Creator.findById(data.user);
     const result = await Plan.create(data);
-    const user = await User.findById(data.user);
+  
     await Promise.all([
         kafkaProducer.sendMessage('utils', {
             type: 'notification',
@@ -40,11 +44,26 @@ const createPlanOFUserInDB = async (data: IPlan) => {
 }
 
 
-const getAllPlans = async (user:JwtPayload) => {
-    const cache = await RedisHelper.redisGet(`allPlans:${user.id}`);
+const getAllPlans = async (user:JwtPayload,userId?:string) => {
+    const cache = await RedisHelper.redisGet(`allPlans:${user.id}:${userId}`);
     if (cache) return cache;
-    const result = await Plan.find({ status: 'active', user: user.id }).sort({ createdAt: -1 });
-    await RedisHelper.redisSet(`allPlans:${user.id}`, result, {}, 240);
+    let result = await Plan.find({ status: 'active', user: user.id }).sort({ createdAt: -1 }).lean();
+    if (userId) {
+        result = await Promise.all(
+            result.map(async (plan) => {
+                const isSubscribed = await Subscription.findOne({
+                    user:userId,
+                    status: 'active',
+                    plan: plan._id,
+                })
+                return {
+                    ...plan,
+                    isSubscribed: isSubscribed ? true : false,
+                }
+            })
+        )
+    }
+    await RedisHelper.redisSet(`allPlans:${user.id}:${userId}`, result, {}, 240);
     return result;
 }
 

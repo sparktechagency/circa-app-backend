@@ -1,3 +1,11 @@
 import { z } from 'zod';
 
-export const WalletValidations = {  };
+const withdrawMoneyZodSchema = z.object({
+    body: z.object({
+        amount: z.number({ required_error: 'Amount is required' }),
+    }),
+});
+
+export const WalletValidations = {
+    withdrawMoneyZodSchema
+};

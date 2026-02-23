@@ -1,8 +1,10 @@
 import { FavoriteServices } from "../../../app/modules/favorite/favorite.service";
 import { UserHelper } from "../../../app/modules/user/user.helper";
 import { UserService } from "../../../app/modules/user/user.service";
+import { handleAccountUpdatedEvent } from "../../../handlers/handleAccountUpdatedEvent";
 import { handleCreditPurchase } from "../../../handlers/handleCreditPurchase";
 import { handleSubscriptionPurchase } from "../../../handlers/handleSubscriptionPurchase";
+import { handleUserWithdraw } from "../../../handlers/handleUserWithdraw";
 import { kafkaConsumer } from "../kafka-producers/kafka.consumer"
 
 export const userConsumer = async ()=>{
@@ -27,6 +29,12 @@ export const userConsumer = async ()=>{
                 break;
             case "report-user":
                 await UserService.reportUserIntoDB(data.data.user, data.data.id, data.data.reason);
+                break;
+            case "connect-account":
+                await handleAccountUpdatedEvent(data.data);
+                break;
+            case "withdraw":
+                await handleUserWithdraw(data.data?.user, data.data?.amount);
                 break;
             default:
                 break;

@@ -10,7 +10,8 @@ export type IPlan = {
   status: 'active' | 'inactive',
   category: "Free" | "Monthly" | "Yearly",
   duration: number,
-  emoji: string
+  emoji: string,
+  fromAdmin?:boolean
 };
 
 export type PlanModel = Model<IPlan>;

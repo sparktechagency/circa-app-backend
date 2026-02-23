@@ -36,9 +36,21 @@ const getAllSubscriptions = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+const joinCreatorForFree = catchAsync(async (req: Request, res: Response) => {
+    const result = await SubscriptionServices.joinCreatorForFree(req.user,req.params.id as any);
+    sendResponse(res, {
+        success: true,
+        statusCode: 200,
+        message: 'Subscription data retrieved successfully',
+        data: result,
+    });
+})
+
+
 
 export const SubscriptionController = {
     purchasePlanFromStripe,
     getSubscription,
-    getAllSubscriptions
+    getAllSubscriptions,
+    joinCreatorForFree
 };

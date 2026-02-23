@@ -5,6 +5,8 @@ import { RedisHelper } from '../../../tools/redis/redis.helper';
 import { Subscription } from '../subscription/subscription.model';
 import { Block, User } from '../user/user.model';
 import { Post } from './post.model';
+import { kafkaProducer } from '../../../tools/kafka/kafka-producers/kafka.producer';
+import { INotification } from '../notification/notification.interface';
 
 async function saveCache(userId:string,postId:string,creatorId?:string) {
     const isOnBlockList = await Block.findOne({ $or:[{blocked_by:userId,user:creatorId},{blocked_by:creatorId,user:userId}] });
@@ -30,6 +32,17 @@ const savePostIntoSubscribersCache = async (postId: string) => {
     await Promise.all(
       subscribers.map(async (subscriber) => {
         await saveCache(subscriber as any,postId)
+        await kafkaProducer.sendMessage('utils', {
+          type: 'notification',
+          data: {
+            title: `${(post?.user as any).name} has published a post!`,
+            message: `${(post?.user as any).name} has published a post!`,
+            isRead: false,
+            filePath: 'post',
+            referenceId: post?._id,
+            receiver: [subscriber],
+          } as INotification,
+        })
       })
     )
   }

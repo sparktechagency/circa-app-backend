@@ -15,7 +15,7 @@ const createProductZodSchema = z.object({
 const updateProductZodSchema = z.object({
     body: z.object({
         name: z.string().optional(),
-        price: z.number().optional(),
+        price: z.string().optional(),
         description: z.string().optional(),
         image: z.any().optional(),
         product_style: z.enum(['Physical', 'Digital']).optional(),

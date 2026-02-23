@@ -59,7 +59,7 @@ export const handlePurhcasePost = async (userId: string, postId: string) => {
       Transaction.create(
         [
           {
-            user: post.user,
+            user: userId,
             total_price: 0,
             payment_received: 0,
             discount_percentage: 0,
@@ -70,6 +70,7 @@ export const handlePurhcasePost = async (userId: string, postId: string) => {
             type: TRANSACTION_TYPE.DEBIT,
             category: TRANSACTION_CATEGORY.POST,
             post: post._id,
+            creator: post.user,
           },
         ],
         { session },

@@ -15,6 +15,10 @@ import { ChatRoutes } from '../app/modules/chat/chat.routes';
 import { MessageRoutes } from '../app/modules/message/message.routes';
 import { GiftRoutes } from '../app/modules/gift/gift.route';
 import { EventRoutes } from '../app/modules/event/event.route';
+import { DashboardRoutes } from '../app/modules/dashboard/dashboard.route';
+import { WalletRoutes } from '../app/modules/wallet/wallet.route';
+import { NotificationRoutes } from '../app/modules/notification/notification.routes';
+import { TransactionRoutes } from '../app/modules/transaction/transaction.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -81,6 +85,22 @@ const apiRoutes = [
   {
     path:"/event",
     route:EventRoutes
+  },
+  {
+    path:"/dashboard",
+    route:DashboardRoutes
+  },
+  {
+    path:"/wallet",
+    route:WalletRoutes
+  },
+  {
+    path:"/notification",
+    route:NotificationRoutes
+  },
+  {
+    path:"/transaction",
+    route:TransactionRoutes
   }
 ];
 

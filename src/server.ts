@@ -9,6 +9,7 @@ import { seedSuperAdmin } from "./DB/seedAdmin";
 import { setupCluster } from "./config/cluster/node.cluster";
 import cluster from 'cluster';
 import { loadConsumer } from "./tools/kafka/kafka-consumers";
+import { startWorker } from "./worker/worker";
 // import { setupSecurity } from "./app/modules/cluster/setup.security";
 
 //uncaught exception
@@ -40,6 +41,7 @@ export async function main() {
         // Seed super admin
         await seedSuperAdmin();
       loadConsumer() // if you  yse kafka
+    await startWorker()
 
         // Start HTTP server
         const port = typeof config.port === 'number' ? config.port : Number(config.port);

@@ -11,7 +11,15 @@ export const chatConsumer = async () => {
         try {
             switch (data.type) {
                 case "create":
-                    await MessageService.sendMessageToDB(data.data);
+                    if(!data.data?.chatId?.includes(",")){
+                        await MessageService.sendMessageToDB(data.data);
+                    }else{
+                        const chatIds = data.data?.chatId?.split(",");
+                        delete data.data?.chatId;
+                        await Promise.all(chatIds.map(async (chatId:any) => {
+                            return await MessageService.sendMessageToDB({...data.data,chatId});
+                        }))
+                    }
                     break;
                 case "purchase-message":
                     await handleMessagePurchase(data.data);

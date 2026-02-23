@@ -18,6 +18,7 @@ import { Subscription } from '../subscription/subscription.model';
 import { Post } from '../post/post.model';
 import { Favorite } from '../favorite/favorite.model';
 import { Chat } from '../chat/chat.model';
+import stripe from '../../../config/stripe';
 
 const createUserToDB = async (payload: Partial<IUser>, res: Response) => {
   payload.role = USER_ROLES.FAN;
@@ -46,18 +47,18 @@ const createUserToDB = async (payload: Partial<IUser>, res: Response) => {
     email: createUser.email!,
   };
   const createAccountTemplate = emailTemplate.createAccount(values);
-  await kafkaProducer.sendMessage('utils', {
-    type: 'email',
-    data: createAccountTemplate,
-  });
+
 
   //save to DB
   const authentication = {
     oneTimeCode: otp,
     expireAt: new Date(Date.now() + 3 * 60000),
   };
-  User.findOneAndUpdate({ _id: createUser._id }, { $set: { authentication } });
-
+  await User.findOneAndUpdate({ _id: createUser._id }, { $set: { authentication } });
+  await kafkaProducer.sendMessage('utils', {
+    type: 'email',
+    data: createAccountTemplate,
+  });
   return createUser;
 };
 
@@ -88,11 +89,18 @@ const updateProfileToDB = async (
     unlinkFile(isExistUser.image);
   }
 
-  const updateDoc = await User.findOneAndUpdate({ _id: id }, payload, {
+  if(isExistUser.role==USER_ROLES.CREATOR){
+      const updateDoc = await Creator.findOneAndUpdate({ _id: id }, payload, {
     new: true,
   });
+  }else{
+      const updateDoc = await User.findOneAndUpdate({ _id: id }, payload, {
+    new: true,
+  })
+  }
 
-  return updateDoc;
+
+  return payload;
 };
 
 const applyForBeACreator = async (user: JwtPayload, body: ICreator) => {
@@ -206,16 +214,27 @@ const getCreatorList = async (query: Record<string, any>) => {
     initQuery.categories = { $in: [query.category] };
   }
   const creatorQuery = new QueryBuilder(
-    Creator.find(initQuery, { name: 1, image: 1 }),
+    Creator.find(initQuery, { name: 1, image: 1,nickname:1 }),
     query,
   )
     .paginate()
     .sort()
     .filter(['category']);
-  const [creators, pagination] = await Promise.all([
+  let [creators, pagination] = await Promise.all([
     creatorQuery.modelQuery.exec(),
     creatorQuery.getPaginationInfo(),
   ]);
+  creators = await Promise.all(
+    creators.map(async (creator: any) => {
+      const members = await Subscription.countDocuments({
+        creator: creator._id,
+      })
+      return {
+        ...creator.toJSON(),
+        members,
+      };
+    })
+  )
   await RedisHelper.redisSet('creators', { creators, pagination }, query, 240);
   return { creators, pagination };
 };
@@ -322,6 +341,10 @@ const getFriendsAndFlattersList = async (
     initQuery = { ...initQuery, gender: { $in: query.gender.split(',') } };
   }
 
+  if(query?.minAge || query?.maxAge) {
+    initQuery = { ...initQuery, age: { $gte: query.minAge, $lte: query.maxAge } };
+  }
+
   const favorites = await Favorite.find(
     { user: user.id },
     { creator: 1 },
@@ -346,6 +369,18 @@ const getFriendsAndFlattersList = async (
     friendsFlartyQuery.modelQuery.exec(),
     friendsFlartyQuery.getPaginationInfo(),
   ]);
+
+  creators = await Promise.all(
+    creators.map(async (creator: any) => {
+      const members = await Subscription.countDocuments({
+        creator: creator._id,
+      })
+      return {
+        ...creator.toJSON(),
+        members,
+      };
+    })
+  )
 
   await RedisHelper.redisSet(
     `friendsAndFlatters:${user.id}`,
@@ -446,6 +481,51 @@ const getReportedUsers = async (user: JwtPayload, query: Record<string, any>) =>
   return { reports, pagination };
 };
 
+const createConnectedAccount = async (user: JwtPayload) => {
+  const userDetails = await Creator.findOne({ _id: user.id });
+  if (!userDetails) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+  }
+
+  if (userDetails.stripe_login_link) {
+    return {
+      data: userDetails.stripe_login_link,
+    };
+  }
+
+  const account = await stripe.accounts.create({
+    type: 'express',
+    country: 'US',
+    email: user.email,
+    capabilities: {
+      card_payments: { requested: true },
+      transfers: { requested: true },
+    },
+    business_type: 'individual',
+    individual: {
+      first_name: userDetails.name,
+      email: userDetails.email,
+    },
+    business_profile: {
+      mcc: '7299',
+      product_description: 'Freelance services on demand',
+      url: 'https://yourplatform.com',
+    },
+  });
+
+  const accountLink = await stripe.accountLinks.create({
+    account: account.id,
+    refresh_url: 'https://yourplatform.com/refresh',
+    return_url: 'https://yourplatform.com/return',
+    type: 'account_onboarding',
+  });
+
+  await Creator.findOneAndUpdate({ _id: user.id }, { stripe_account_id: account.id });
+  return {
+    data: accountLink.url,
+  };
+};
+
 export const UserService = {
   createUserToDB,
   getUserProfileFromDB,
@@ -460,5 +540,6 @@ export const UserService = {
   blockUserIntoDB,
   getBlockList,
   reportUserIntoDB,
-  getReportedUsers
+  getReportedUsers,
+  createConnectedAccount,
 };

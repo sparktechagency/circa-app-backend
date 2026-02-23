@@ -7,11 +7,10 @@ const transactionSchema = new Schema<ITransaction, TransactionModel>({
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
   },
   creator: {
     type: Schema.Types.ObjectId,
-    ref: 'Creator',
+    ref: 'User',
   },
   total_price: {
     type: Number,

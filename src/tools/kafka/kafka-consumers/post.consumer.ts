@@ -4,7 +4,7 @@ import { handlePurhcasePost } from "../../../handlers/handlePurchasePost";
 import { kafkaConsumer } from "../kafka-producers/kafka.consumer";
 
 export const postConsumer =async () => {
-    await kafkaConsumer({groupId:"post",topic:"post",cb:async(data:{type:string,data:any})=>{
+    await kafkaConsumer({groupId:"post-circa",topic:"post-circa",cb:async(data:{type:string,data:any})=>{
         try {
             switch (data.type) {
                 case "save-cache":

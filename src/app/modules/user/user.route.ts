@@ -62,7 +62,7 @@ router.route("/report")
     .get(auth(USER_ROLES.ADMIN,USER_ROLES.SUPER_ADMIN),UserController.getReportList)
 
 
-
+router.route("/connected-account").post(auth(USER_ROLES.CREATOR),UserController.createConnectedAccount)
 
 router.route("/creator/:id").get(auth(USER_ROLES.FAN), UserController.getCreatorProfile);
 

@@ -88,7 +88,7 @@ const sendGiftToCreators = async (user:IUser & {_id:string},gift:IGift&{_id:stri
                 discount_percentage:0,
                 discount_amount:0,
                 platform_fee:0,
-                user:receiver,
+                user:user._id,
                 credit_received:gift.credit,
                 status:TRANSACTION_STATUS.SUCCESS,
                 type:TRANSACTION_TYPE.DEBIT,

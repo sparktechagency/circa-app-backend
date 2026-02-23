@@ -26,6 +26,7 @@ const createChatToDB = async (payload: any,user:JwtPayload): Promise<IChat> => {
     }
 
     const chat: IChat = await Chat.create({ participants: payload });
+    await RedisHelper.keyDelete(`myChats:${user.id}:*`);
     return chat;
 }
 

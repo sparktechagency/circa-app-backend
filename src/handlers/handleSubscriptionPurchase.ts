@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import Stripe from 'stripe';
 import stripe from '../config/stripe';
 import { Plan } from '../app/modules/plan/plan.model';
-import { User } from '../app/modules/user/user.model';
+import { Creator, User } from '../app/modules/user/user.model';
 import { Subscription } from '../app/modules/subscription/subscription.model';
 import { Transaction } from '../app/modules/transaction/transaction.model';
 import {
@@ -13,6 +13,7 @@ import {
 import { kafkaProducer } from '../tools/kafka/kafka-producers/kafka.producer';
 import { INotification } from '../app/modules/notification/notification.interface';
 import { RedisHelper } from '../tools/redis/redis.helper';
+import { WalletServices } from '../app/modules/wallet/wallet.service';
 
 export const handleSubscriptionPurchase = async (
   subSession: Stripe.Checkout.Session,
@@ -25,9 +26,24 @@ export const handleSubscriptionPurchase = async (
 
     const plan = await Plan.findById(planId).populate('user').session(session);
     const user = await User.findById(userId).session(session);
+    const creator = await Creator.findById(plan?.user._id).session(session);
 
     if (!plan || !user) {
       throw new Error('Plan or user not found');
+    }
+
+    if (!creator?.stripe_login_link) {
+      await WalletServices.addDraftBalance(
+        creator as any,
+        plan.price - plan.price * 0.1,
+        session,
+      );
+    } else {
+      stripe.transfers.create({
+        amount: (plan.price - plan.price * 0.1) * 100,
+        currency: 'usd',
+        destination: creator?.stripe_account_id!,
+      });
     }
 
     const subscription = (
@@ -52,7 +68,7 @@ export const handleSubscriptionPurchase = async (
             payment_received: 0,
             discount_percentage: 0,
             discount_amount: 0,
-            platform_fee: plan.price * 0.1,
+            platform_fee: 0,
             status: TRANSACTION_STATUS.SUCCESS,
             type: TRANSACTION_TYPE.CREDIT,
             category: TRANSACTION_CATEGORY.MEMBERSHIP,
@@ -65,7 +81,7 @@ export const handleSubscriptionPurchase = async (
       Transaction.create(
         [
           {
-            user: plan.user._id,
+            user: user._id,
             total_price: plan.price,
             payment_received: plan.price - plan.price * 0.1,
             discount_percentage: 0,
@@ -75,6 +91,7 @@ export const handleSubscriptionPurchase = async (
             type: TRANSACTION_TYPE.DEBIT,
             category: TRANSACTION_CATEGORY.MEMBERSHIP,
             subscription: subscription._id,
+            creator: plan.user._id,
           },
         ],
         { session },

@@ -33,7 +33,7 @@ const planSchema = new Schema<IPlan, PlanModel>({
         default: 0
       }
     }],
-    required: true,
+    required: false,
   },
   status: {
     type: String,
@@ -56,7 +56,12 @@ const planSchema = new Schema<IPlan, PlanModel>({
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
+  },
+  fromAdmin: {
+    type: Boolean,
+    required: false,
+    default: false
   }
 }, { timestamps: true });
 

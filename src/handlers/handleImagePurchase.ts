@@ -51,7 +51,7 @@ export const handleImagePurhcase = async (userId: string, messageId: string) => 
       Transaction.create(
         [
           {
-            user: message.sender,
+            user: userId,
             total_price: 0,
             payment_received: 0,
             discount_percentage: 0,

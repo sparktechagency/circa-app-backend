@@ -44,7 +44,7 @@ export const handleMessagePurchase = async (messageSession:IMessageSession) => {
                 category:TRANSACTION_CATEGORY.CHAT
             }],{session}),
             Transaction.create([{
-                user: creator,
+                user: user._id,
                 total_price:0,
                 payment_received:0,
                 discount_percentage:0,
@@ -52,7 +52,8 @@ export const handleMessagePurchase = async (messageSession:IMessageSession) => {
                 platform_fee:0,
                 credit_received:5,
                 type:TRANSACTION_TYPE.DEBIT,
-                category:TRANSACTION_CATEGORY.CHAT
+                category:TRANSACTION_CATEGORY.CHAT,
+                creator:creator
             }]),
             kafkaProducer.sendMessage("utils", {
                 type: "notification",

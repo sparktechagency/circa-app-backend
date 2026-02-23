@@ -1,5 +1,5 @@
 import { JwtPayload } from 'jsonwebtoken';
-import { IComment, ILike, PostModel } from './post.interface';
+import { IComment, ILike, IPost, PostModel } from './post.interface';
 import { Comment, Like, Post } from './post.model';
 import QueryBuilder from '../../builder/QueryBuilder';
 import { USER_ROLES } from '../../../enums/user';
@@ -17,9 +17,20 @@ import { Block, User } from '../user/user.model';
 import AggregateQueryBuilder from '../../builder/AggrigateQueryBuilder';
 import mongoose from 'mongoose';
 
-const createPostIntoDB = async (payload: PostModel) => {
+const createPostIntoDB = async (payload: IPost) => {
+  console.log(payload);
+  
+  if ((payload as any).schedule_post=='true') {
+    payload.status = 'draft';
+    payload.scdule_date = new Date(
+      `${payload.scdule_date} ${payload.schedule_time}`,
+    );
+  }
   const post = await Post.create(payload);
   await RedisHelper.keyDelete(`myPosts:${post?.user}:*`);
+  if (payload.schedule_post) {
+    return post;
+  }
   await kafkaProducer.sendMessage('utils', {
     type: 'post-notification',
     data: post._id,
@@ -38,7 +49,7 @@ const getMyPosts = async (user: JwtPayload, query: Record<string, any>) => {
     user.role,
   )
     ? { status: 'active' }
-    : { user: user.id, status: 'active' };
+    : { user: user.id, status: { $in: ['active', 'draft'] } };
   const postQuery = new QueryBuilder(Post.find(initQuery), query)
     .paginate()
     .sort()
@@ -88,6 +99,20 @@ const getPostDetails = async (id: string, user: JwtPayload) => {
         ...post,
         timeAgo: timeAgo(post.createdAt),
         ...(!purchasedPost && { premium_status: 'Not a Premium User' }),
+        isLike: (await Like.findOne({
+          user: user.id,
+          post: post._id,
+        }))
+          ? true
+          : false,
+        like_count: post.post_visibility?.includes(POST_VISIBILITY.HIDE_LIKES)
+          ? 0
+          : post.like_count,
+        comment_count: post.post_visibility?.includes(
+          POST_VISIBILITY.HIDE_COMMENTS,
+        )
+          ? 0
+          : post.comment_count,
       };
       await RedisHelper.redisSet(
         `postDetails:${user.id}:${id}`,
@@ -100,6 +125,18 @@ const getPostDetails = async (id: string, user: JwtPayload) => {
     const newPost = {
       ...post,
       timeAgo: timeAgo(post.createdAt),
+      isLike: await Like.findOne({
+        user: user.id,
+        post: post._id,
+      }),
+      like_count: post.post_visibility?.includes(POST_VISIBILITY.HIDE_LIKES)
+        ? 0
+        : post.like_count,
+      comment_count: post.post_visibility?.includes(
+        POST_VISIBILITY.HIDE_COMMENTS,
+      )
+        ? 0
+        : post.comment_count,
     };
     await RedisHelper.redisSet(
       `postDetails:${user.id}:${id}`,
@@ -111,11 +148,37 @@ const getPostDetails = async (id: string, user: JwtPayload) => {
   }
   await RedisHelper.redisSet(
     `postDetails:${user.id}:${id}`,
-    { ...post, timeAgo: timeAgo(post.createdAt) },
+    {
+      ...post,
+      timeAgo: timeAgo(post.createdAt),
+      isLike: (await Like.findOne({ user: user.id, post: post._id }))
+        ? true
+        : false,
+      like_count: post.post_visibility?.includes(POST_VISIBILITY.HIDE_LIKES)
+        ? 0
+        : post.like_count,
+      comment_count: post.post_visibility?.includes(
+        POST_VISIBILITY.HIDE_COMMENTS,
+      )
+        ? 0
+        : post.comment_count,
+    },
     {},
     240,
   );
-  return { ...post, timeAgo: timeAgo(post.createdAt) };
+  return {
+    ...post,
+    timeAgo: timeAgo(post.createdAt),
+    isLike: (await Like.findOne({ user: user.id, post: post._id }))
+      ? true
+      : false,
+    like_count: post.post_visibility?.includes(POST_VISIBILITY.HIDE_LIKES)
+      ? 0
+      : post.like_count,
+    comment_count: post.post_visibility?.includes(POST_VISIBILITY.HIDE_COMMENTS)
+      ? 0
+      : post.comment_count,
+  };
 };
 
 const updatePostToDB = async (id: string, payload: Partial<PostModel>) => {
@@ -156,7 +219,7 @@ const getPostsFromFeedToUser = async (
         _id: { $in: cachePosts },
       },
       {
-        who_can_see: WHO_CAN_SEE_STATUS.EVERYONE,
+        who_can_see: {$in: [WHO_CAN_SEE_STATUS.EVERYONE, WHO_CAN_SEE_STATUS.GOLD_TIERS, WHO_CAN_SEE_STATUS.SUBSCRIBER]},
       },
     ],
     post_visibility: {
@@ -175,12 +238,30 @@ const getPostsFromFeedToUser = async (
     postQuery.modelQuery.populate('user', ['name', 'email', 'image']).exec(),
     postQuery.getPaginationInfo(),
   ]);
-  posts = posts.map((post: any) => {
-    return {
-      ...post.toJSON(),
-      timeAgo: timeAgo(post.createdAt),
-    };
-  });
+  posts = await Promise.all(
+    posts.map(async (post: any) => {
+      const isLiked = await Like.findOne({
+        user: user.id,
+        post: post._id,
+      })
+        .lean()
+        .exec();
+      return {
+        ...post.toJSON(),
+        timeAgo: timeAgo(post.createdAt),
+        isLiked: isLiked ? true : false,
+        likeCount: post.post_visibility?.includes(POST_VISIBILITY.HIDE_LIKES)
+          ? 0
+          : post?.like_count,
+        comment_count: post?.post_visibility?.includes(
+          POST_VISIBILITY.HIDE_COMMENTS,
+        )
+          ? 0
+          : post?.comment_count,
+        isPrimium: post.who_can_see !== WHO_CAN_SEE_STATUS.EVERYONE,
+      };
+    }),
+  );
   await RedisHelper.redisSet(
     `postFeed:${user.id}`,
     { posts, pagination },
@@ -248,8 +329,6 @@ const likePostIntoDB = async (payload: ILike) => {
       ?.post as any;
   }
 
-  console.log(post);
-
   if (payload.for == 'post')
     await Post.findByIdAndUpdate(post?._id, { $inc: { like_count: 1 } }).exec();
   if (payload.for == 'comment')
@@ -305,18 +384,24 @@ const commentPostIntoDB = async (payload: IComment) => {
   });
 };
 
-
 const getLikesByPostId = async (postId: string, query: Record<string, any>) => {
-  const likeQuery = new QueryBuilder(Like.find({ post: postId }), query).paginate().sort()
+  const likeQuery = new QueryBuilder(Like.find({ post: postId }), query)
+    .paginate()
+    .sort();
   let [likes, pagination] = await Promise.all([
     likeQuery.modelQuery.populate('user', ['name', 'email', 'image']).exec(),
     likeQuery.getPaginationInfo(),
   ]);
-  return { likes:likes.map((like: any) => like.user), pagination };
-}
+  return { likes: likes.map((like: any) => like.user), pagination };
+};
 
-const getCommentsByPostId = async (postId: string, query: Record<string, any>) => {
-  const commentQuery = new AggregateQueryBuilder(Comment, query).paginate().sort()
+const getCommentsByPostId = async (
+  postId: string,
+  query: Record<string, any>,
+) => {
+  const commentQuery = new AggregateQueryBuilder(Comment, query)
+    .paginate()
+    .sort();
   commentQuery.insertCustomStage([
     {
       $match: {
@@ -324,22 +409,23 @@ const getCommentsByPostId = async (postId: string, query: Record<string, any>) =
         for: 'post',
       },
     },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'user',
-          foreignField: '_id',
-          as: 'user',
-          pipeline: [{ $project: { name: 1, email: 1, image: 1 } }],
-        },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user',
+        pipeline: [{ $project: { name: 1, email: 1, image: 1 } }],
       },
-      {
-        $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'comment',
-          as: 'reply',
-          pipeline: [{
+    },
+    {
+      $lookup: {
+        from: 'comments',
+        localField: '_id',
+        foreignField: 'comment',
+        as: 'reply',
+        pipeline: [
+          {
             $lookup: {
               from: 'users',
               localField: 'user',
@@ -347,16 +433,17 @@ const getCommentsByPostId = async (postId: string, query: Record<string, any>) =
               as: 'user',
               pipeline: [{ $project: { name: 1, email: 1, image: 1 } }],
             },
-          }],
-        },
-      }
-  ])
+          },
+        ],
+      },
+    },
+  ]);
   const [comments, pagination] = await Promise.all([
     commentQuery.exec(),
     commentQuery.getPaginationInfo(),
-  ])
+  ]);
   return { comments, pagination };
-}
+};
 
 export const PostServices = {
   createPostIntoDB,
@@ -369,5 +456,5 @@ export const PostServices = {
   likePostIntoDB,
   commentPostIntoDB,
   getLikesByPostId,
-  getCommentsByPostId
+  getCommentsByPostId,
 };

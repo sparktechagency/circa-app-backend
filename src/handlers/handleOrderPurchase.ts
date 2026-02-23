@@ -13,6 +13,9 @@ import { kafkaProducer } from '../tools/kafka/kafka-producers/kafka.producer';
 import { INotification } from '../app/modules/notification/notification.interface';
 import { Cart } from '../app/modules/cart/cart.model';
 import { RedisHelper } from '../tools/redis/redis.helper';
+import stripe from '../config/stripe';
+import { Creator } from '../app/modules/user/user.model';
+import { WalletServices } from '../app/modules/wallet/wallet.service';
 
 export const handleOrderPurchase = async (
   orderSession: Stripe.Checkout.Session,
@@ -41,7 +44,7 @@ export const handleOrderPurchase = async (
             discount_amount: 0,
             platform_fee: orderDetails.price_breakdown.serviceFee,
             status: TRANSACTION_STATUS.SUCCESS,
-            type: TRANSACTION_TYPE.DEBIT,
+            type: TRANSACTION_TYPE.CREDIT,
             category: TRANSACTION_CATEGORY.SHOP,
             order: orderId,
           },
@@ -50,9 +53,46 @@ export const handleOrderPurchase = async (
       )
     )[0];
 
-    await Promise.all([
+    const serviceFee = orderDetails.price_breakdown.total_price * 0.05;
+    const finalPrice =
+      orderDetails.price_breakdown.total_price +
+      orderDetails.price_breakdown.delivery_charge -
+      (orderDetails.price_breakdown.tax + serviceFee);
+    const creatorAccount = await Creator.findById(
+      orderDetails.creator?._id,
+    ).session(session);
 
-      await Order.findOneAndUpdate(
+    if (!creatorAccount?.stripe_login_link) {
+      await WalletServices.addDraftBalance(
+        creatorAccount as any,
+        finalPrice,
+        session,
+      );
+    } else {
+      await stripe.transfers.create({
+        amount: finalPrice * 100,
+        currency: 'usd',
+        destination: creatorAccount?.stripe_account_id!,
+      });
+    }
+
+    await Promise.all([
+      Transaction.create([
+        {
+          user: userId,
+          total_price: orderDetails.price_breakdown.total_price,
+          payment_received: orderDetails.price_breakdown.subtotal - serviceFee,
+          discount_percentage: 0,
+          discount_amount: 0,
+          platform_fee: serviceFee,
+          status: TRANSACTION_STATUS.SUCCESS,
+          type: TRANSACTION_TYPE.CREDIT,
+          category: TRANSACTION_CATEGORY.SHOP,
+          order: orderId,
+          creator: orderDetails.creator,
+        },
+      ]),
+      Order.findOneAndUpdate(
         { _id: orderId },
         {
           payment_status: 'paid',
@@ -60,8 +100,8 @@ export const handleOrderPurchase = async (
           transaction_id: transaction.transaction_id,
         },
       ).session(session),
-      await Cart.deleteMany({ user: userId }).session(session),
-      await RedisHelper.keyDelete(`myCart:${userId}:*`),
+      Cart.deleteMany({ user: userId }).session(session),
+      RedisHelper.keyDelete(`myCart:${userId}:*`),
 
       kafkaProducer.sendMessage('utils', {
         type: 'notification',
@@ -105,6 +145,9 @@ export const handleOrderPurchase = async (
     await session.abortTransaction();
     session.endSession();
     await Order.findByIdAndDelete(orderSession.metadata?.orderId);
+    await stripe.refunds.create({
+      payment_intent: orderSession.payment_intent as string,
+    });
     console.log(error);
   }
 };

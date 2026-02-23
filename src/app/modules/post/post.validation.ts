@@ -8,7 +8,7 @@ const createPostZodSchema = z.object({
         image: z.any().optional(),
         is_18_plus: z.string({ required_error: 'is_18_plus is required' }).refine(value => ['true', 'false'].includes(value), { message: 'Invalid is_18_plus' }),
         schedule_post: z.string({ required_error: 'schedule_post is required' }).refine(value => ['true', 'false'].includes(value), { message: 'Invalid schedule_post' }).optional(),
-        scdule_date: z.string().refine(value => new Date(value) >= new Date(), { message: 'Schedule date must be in the future' }).optional(),
+        scdule_date: z.string().optional(),
         schedule_time: z.string().optional(),
         who_can_see: z.nativeEnum(WHO_CAN_SEE_STATUS, { required_error: 'who_can_see is required' }),
         post_visibility: z.array(z.nativeEnum(POST_VISIBILITY)).optional(),

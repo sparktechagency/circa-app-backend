@@ -27,7 +27,7 @@ const getAllPlans = async (req: Request, res: Response) => {
 
 
 const getPlansByUserId = async (req: Request, res: Response) => {
-    const result = await PlanServices.getAllPlans({ id: req.params.id });
+    const result = await PlanServices.getAllPlans({ id: req.params.id },req.user?.id as string);
     return res.status(200).json({
         success: true,
         statusCode: 200,

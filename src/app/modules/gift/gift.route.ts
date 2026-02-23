@@ -14,6 +14,8 @@ router.route('/')
 
 router.post("/send-gift",auth(USER_ROLES.FAN),validateRequest(GiftValidations.sendGiftZodSchema),GiftController.sendGiftToCreators)
 
+router.post("/wow/:id",auth(USER_ROLES.FAN),GiftController.sendWowGiftToCreators)
+
 router.route('/:id')
     .patch(auth(USER_ROLES.ADMIN,USER_ROLES.SUPER_ADMIN),fileUploadHandler(),validateRequest(GiftValidations.updateGiftZodSchema),GiftController.updateGift)
     .delete(auth(USER_ROLES.ADMIN,USER_ROLES.SUPER_ADMIN),GiftController.deleteGift)
