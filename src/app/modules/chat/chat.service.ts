@@ -1,6 +1,6 @@
 import { Jwt, JwtPayload } from 'jsonwebtoken';
 import { IMessage } from '../message/message.interface';
-import { Message } from '../message/message.model';
+import { Message, MessageSession } from '../message/message.model';
 import { IChat } from './chat.interface';
 import { Chat } from './chat.model';
 import { USER_ROLES } from '../../../enums/user';
@@ -21,12 +21,13 @@ const createChatToDB = async (payload: any,user:JwtPayload): Promise<IChat> => {
     }
     const subscription = user.role == USER_ROLES.FAN ? await Subscription.findOne({user:user.id,creator:payload[1],status:'active'}) : await Subscription.findOne({user:payload[1],creator:user.id,status:'active'})
 
-    if(!subscription){
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'You are not subscribed to this creator')
-    }
+    // if(!subscription){
+    //     throw new ApiError(StatusCodes.BAD_REQUEST, 'You are not subscribed to this creator')
+    // }
 
     const chat: IChat = await Chat.create({ participants: payload });
     await RedisHelper.keyDelete(`myChats:${user.id}:*`);
+    await RedisHelper.keyDelete(`myChats:${payload[1]}:*`);
     return chat;
 }
 
@@ -55,11 +56,12 @@ const getChatFromDB = async (user: JwtPayload, search: string): Promise<IChat[]>
         filteredChats?.map(async (chat: any) => {
             const data = chat?.toObject();
             const subscription = (await Subscription.findOne((user.role == USER_ROLES.CREATOR ? ({creator:user.id,user:data?.participants[0]?._id,status:'active'}) : ({creator:data?.participants[0]?._id,user:user.id,status:'active'})),{plan:1}).populate("plan",'name emoji').lean())?.plan as any  as IPlan
-            const unreadMessages = await Message.countDocuments({ chatId: chat?._id, seenBy: { $nin: [user.id] } });
+            const unreadMessages = await Message.countDocuments({ chatId: chat?._id, seenBy: { $nin: [user.id] },sender:{ $ne: user.id } });
             const lastMessage: IMessage | null = await Message.findOne({ chatId: chat?._id })
             .sort({ createdAt: -1 })
             .select('text createdAt sender');
                const gift = (await GiftSend.findOne({chatId:chat?._id,createdAt:{$gt:new Date(Date.now() - (1000 * 60 * 60 * 24))}},{gift:1}).populate('gift','name image credit').lean())?.gift as any
+            const messageSession= (await MessageSession.findOne({chatId:chat?._id}))?.messageCount || 0
     
             return {
                 ...data,
@@ -67,7 +69,8 @@ const getChatFromDB = async (user: JwtPayload, search: string): Promise<IChat[]>
                 lastMessage: lastMessage || null,
                 plan:subscription,
                 unreadMessages,
-                gift
+                gift,
+                remaningMessage:messageSession
             };
         })
     );

@@ -90,13 +90,22 @@ const getMySubscriptionCreators = async (
 
   let [subscriptions, pagination] = await Promise.all([
     subscrionsQuery.modelQuery
-      .populate('creator', 'name email image short_bio date_of_birth age')
+      .populate('creator', 'name email image short_bio date_of_birth age').populate('plan')
       .lean()
       .exec(),
     subscrionsQuery.getPaginationInfo(),
   ]);
   subscriptions = subscriptions.map(
-    (subscription: any) => subscription.creator,
+    (subscription: any) => {
+      return {
+        ...subscription.creator,
+        plan: subscription.plan?.name,
+        icon: subscription.plan?.emoji,
+        start_date: subscription.start_date,
+        end_date: subscription.end_date,
+        planDetails: subscription.plan
+      };
+    }
   );
   await RedisHelper.redisSet(
     `creatorList:${user.id}`,
@@ -150,9 +159,42 @@ const joinCreatorForFree = async (user: JwtPayload, creatorId: Types.ObjectId) =
   ])
 };
 
+
+const getMemberListOFCreator = async (user: JwtPayload) => {
+  const subscrionsQuery = new QueryBuilder(
+    Subscription.find({ creator: user.id, status: 'active' }),
+    {},
+  )
+    .paginate()
+    .sort()
+    .filter();
+
+  let [subscriptions, pagination] = await Promise.all([
+    subscrionsQuery.modelQuery
+      .populate('user', 'name email image short_bio date_of_birth age').populate('plan', 'name emoji')
+      .lean()
+      .exec(),
+    subscrionsQuery.getPaginationInfo(),
+  ]);
+  subscriptions = subscriptions.map(
+    (subscription: any) => {
+      return {
+        ...subscription.user,
+        plan: subscription.plan?.name,
+        icon: subscription.plan?.emoji,
+        start_date: subscription.start_date,
+        end_date: subscription.end_date,
+
+      };
+    }
+  )
+  return { subscriptions, pagination };
+}
+
 export const SubscriptionServices = {
   purchasePlanFromStripe,
   getSubscription,
   getMySubscriptionCreators,
-  joinCreatorForFree
+  joinCreatorForFree,
+  getMemberListOFCreator
 };

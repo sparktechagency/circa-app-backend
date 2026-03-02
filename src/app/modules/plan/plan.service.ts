@@ -14,6 +14,7 @@ import { Subscription } from '../subscription/subscription.model';
 const createPlanOFUserInDB = async (data: IPlan) => {
       const user = await Creator.findById(data.user);
     const result = await Plan.create(data);
+    await RedisHelper.keyDelete(`allPlans:${data.user}:*`);
   
     await Promise.all([
         kafkaProducer.sendMessage('utils', {

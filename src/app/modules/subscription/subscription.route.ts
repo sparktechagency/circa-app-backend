@@ -10,4 +10,5 @@ router.route('/subscribe/:id')
     .get(auth(USER_ROLES.FAN),SubscriptionController.getSubscription)
 router.route("/creators").get(auth(USER_ROLES.FAN),SubscriptionController.getAllSubscriptions)
 router.post("/join-free/:id",auth(USER_ROLES.FAN),SubscriptionController.joinCreatorForFree)
+router.get("/memberlist",auth(USER_ROLES.CREATOR),SubscriptionController.getMemberListOFCreator)
 export const SubscriptionRoutes = router;

@@ -47,10 +47,23 @@ const joinCreatorForFree = catchAsync(async (req: Request, res: Response) => {
 })
 
 
+const getMemberListOFCreator = catchAsync(async (req: Request, res: Response) => {
+    const result = await SubscriptionServices.getMemberListOFCreator(req.user);
+    sendResponse(res, {
+        success: true,
+        statusCode: 200,
+        message: 'Subscription data retrieved successfully',
+        data: result.subscriptions,
+        pagination: result.pagination
+    });
+})
+
+
 
 export const SubscriptionController = {
     purchasePlanFromStripe,
     getSubscription,
     getAllSubscriptions,
-    joinCreatorForFree
+    joinCreatorForFree,
+    getMemberListOFCreator
 };

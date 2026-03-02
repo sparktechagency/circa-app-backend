@@ -54,7 +54,7 @@ const withdrawMoney = async (user:JwtPayload,amount:number) =>{
         throw new ApiError(StatusCodes.BAD_REQUEST,'Insufficient balance');
     }
 
-    await kafkaProducer.sendMessage("user",{
+    await kafkaProducer.sendMessage("circa-user",{
         type:"withdraw",
         data:{user:user.id,amount}
     })

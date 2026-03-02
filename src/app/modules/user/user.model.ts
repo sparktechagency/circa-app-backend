@@ -11,8 +11,10 @@ import {
   IBlock,
   ICreator,
   ICreatorRequest,
+  INotificationSettings,
   IReport,
   IUser,
+  NotificationSettingsModel,
   ReportModel,
   UserModal,
 } from './user.interface';
@@ -297,3 +299,32 @@ const reportSchema = new Schema<IReport, ReportModel>(
 );
 reportSchema.index({ user: 1 });
 export const Report = model<IReport, ReportModel>('Report', reportSchema);
+
+
+
+const notificationSettingsSchema = new Schema<INotificationSettings, NotificationSettingsModel>({
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  messages: {
+    type: Boolean,
+    default: true
+  },
+  calls: {
+    type: Boolean,
+    default: true
+  },
+  shop: {
+    type: Boolean,
+    default: true
+  },
+  gift: {
+    type: Boolean,
+    default: true
+  }
+}, { timestamps: true });
+
+notificationSettingsSchema.index({ user: 1 });
+
+export const NotificationSettings = model<INotificationSettings, NotificationSettingsModel>('NotificationSettings', notificationSettingsSchema);

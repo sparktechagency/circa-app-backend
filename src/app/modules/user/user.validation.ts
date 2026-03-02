@@ -60,6 +60,22 @@ const blockUserZodSchema = z.object({
   }),
 })
 
+
+const updateNotificationsSettingsZodSchema = z.object({
+  body: z.object({
+    messages: z.boolean({ required_error: 'Messages is required' }),
+    calls: z.boolean({ required_error: 'Calls is required' }),
+    shop: z.boolean({ required_error: 'Shop is required' }),
+    gift: z.boolean({ required_error: 'Gift is required' }),
+  }),
+})
+
+const searchCreatorsZodSchema = z.object({
+  query: z.object({
+    searchTerm: z.string({ required_error: 'Search term is required' }).optional(),
+  }),
+})
+
 export const UserValidation = {
   createUserZodSchema,
   updateUserZodSchema,
@@ -67,5 +83,7 @@ export const UserValidation = {
   changeStatusOfCreatorRequestZodSchema,
   getFriendsAndFlattersListZodSchema,
   reportUserZodSchema,
-  blockUserZodSchema
+  blockUserZodSchema,
+  updateNotificationsSettingsZodSchema,
+  searchCreatorsZodSchema
 };

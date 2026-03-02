@@ -65,9 +65,11 @@ const getSingleProduct = async (id: string) => {
 const updateProduct = async (id: string, data: Partial<IProduct>) => {
   const product = await Product.findOne({ status: 'active', _id: id });
   if (!product) throw new ApiError(StatusCodes.NOT_FOUND, 'Product not found!');
-  if (data.image && product.image) {
-    unlinkFile(product.image);
-  }
+  // if (data.image && product.image) {
+  //   unlinkFile(product.image);
+  // }
+  console.log(data.image);
+  
   const result = await Product.findOneAndUpdate(
     { status: 'active', _id: id },
     data,

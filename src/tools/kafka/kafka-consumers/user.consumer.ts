@@ -8,8 +8,10 @@ import { handleUserWithdraw } from "../../../handlers/handleUserWithdraw";
 import { kafkaConsumer } from "../kafka-producers/kafka.consumer"
 
 export const userConsumer = async ()=>{
-    await kafkaConsumer({groupId:"user",topic:"user",cb:async (data:{type:string,data:any})=>{
+    await kafkaConsumer({groupId:"circa-user",topic:"circa-user",cb:async (data:{type:string,data:any})=>{
        try {
+ 
+        
         switch (data.type) {
             case "approve-request":
                 await UserHelper.acceptTheCreatorRequest(data.data);

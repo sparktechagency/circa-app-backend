@@ -6,8 +6,8 @@ import { emailHelper } from '../../../helpers/emailHelper';
 import { emailTemplate } from '../../../shared/emailTemplate';
 import unlinkFile from '../../../shared/unlinkFile';
 import generateOTP from '../../../util/generateOTP';
-import { ICreator, IUser } from './user.interface';
-import { Block, Creator, CreatorRequest, Report, User } from './user.model';
+import { ICreator, INotificationSettings, IUser } from './user.interface';
+import { Block, Creator, CreatorRequest, NotificationSettings, Report, User } from './user.model';
 import { AuthHelper } from '../auth/auth.helper';
 import { Response } from 'express';
 import { kafkaProducer } from '../../../tools/kafka/kafka-producers/kafka.producer';
@@ -19,6 +19,7 @@ import { Post } from '../post/post.model';
 import { Favorite } from '../favorite/favorite.model';
 import { Chat } from '../chat/chat.model';
 import stripe from '../../../config/stripe';
+import AggregateQueryBuilder from '../../builder/AggrigateQueryBuilder';
 
 const createUserToDB = async (payload: Partial<IUser>, res: Response) => {
   payload.role = USER_ROLES.FAN;
@@ -392,6 +393,8 @@ const getFriendsAndFlattersList = async (
 };
 
 const blockUserIntoDB = async (user: JwtPayload, id: string) => {
+ 
+  
   const block = await Block.findOne({ blocked_by: user.id, user: id }).lean();
   if (block) {
     await Block.findOneAndDelete({ blocked_by: user.id, user: id });
@@ -526,6 +529,97 @@ const createConnectedAccount = async (user: JwtPayload) => {
   };
 };
 
+
+const getUserProfileFromUsingDb= async (id: string) => {
+  const user = await User.findOne({ _id: id }, { name: 1, image: 1, short_bio: 1, date_of_birth: 1, age: 1,username:1,email:1 ,});
+  if (!user) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+  }
+  return user;
+}
+
+
+const updateNotificationsSettings = async (user: any, payload: INotificationSettings) => {
+  const exist = await NotificationSettings.findOne({ user: user.id });
+  payload.user = user.id;
+  if (exist) {
+    await NotificationSettings.findOneAndUpdate({ user: user.id }, payload);
+  } else {
+    await NotificationSettings.create(payload);
+  }
+}
+
+const getNotificationsSettings = async (user: any) => {
+  const exist = await NotificationSettings.findOne({ user: user.id },{messages:1,calls:1,gift:1,shop:1,_id:0}).lean();
+  if (exist) {
+    return exist;
+  }
+  const newSettings = await NotificationSettings.create({ user: user.id });
+  return newSettings;
+}
+
+const searchCreators = async (query: Record<string, any>, user: JwtPayload) => {
+  const myCreators = await Subscription
+    .find({ user: user.id })
+    .distinct('creator');
+
+  const searchText = query?.searchTerm || '';
+
+  const creatorQuery = new AggregateQueryBuilder(
+    Creator,
+    query,
+  ).paginate().sort();
+
+  creatorQuery.insertCustomStage([
+    {
+      $lookup: {
+        from: 'categories',
+        localField: 'categories',
+        foreignField: '_id',
+        as: 'categories',
+        pipeline: [
+          {
+            $project: { name: 1 }
+          }
+        ]
+      }
+    },
+ ...(searchText
+  ? [{
+      $match: {
+        $or: [
+          { name: { $regex: searchText, $options: 'i' } },
+          { categories: { $elemMatch: { name: { $regex: searchText, $options: 'i' } } } },
+          // { _id: { $in: myCreators } }
+          {username: { $regex: searchText, $options: 'i' }}
+        ],
+      },
+    }]
+  : [{
+      $match: { _id: { $in: myCreators } }
+    }]
+),
+    {
+      $project: {
+        name: 1,
+        image: 1,
+        short_bio: 1,
+        date_of_birth: 1,
+        age: 1,
+        username: 1,
+        email: 1,
+      },
+    }
+  ]);
+
+  let [creators, pagination] = await Promise.all([
+    creatorQuery.exec(),
+    creatorQuery.getPaginationInfo(),
+  ]);
+
+  return { creators, pagination };
+};
+
 export const UserService = {
   createUserToDB,
   getUserProfileFromDB,
@@ -542,4 +636,8 @@ export const UserService = {
   reportUserIntoDB,
   getReportedUsers,
   createConnectedAccount,
+  getUserProfileFromUsingDb,
+  updateNotificationsSettings,
+  getNotificationsSettings,
+  searchCreators
 };

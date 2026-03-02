@@ -7,7 +7,7 @@ const createProductZodSchema = z.object({
         description: z.string({ required_error: 'Description is required' }),
         image: z.any({ required_error: 'Image is required' }),
         product_style: z.enum(['Physical', 'Digital'], { required_error: 'Product style is required' }).optional().default('Physical'),
-        resource_link: z.string().url().optional(),
+        resource_link: z.string().optional(),
     }),
 });
 
@@ -19,7 +19,7 @@ const updateProductZodSchema = z.object({
         description: z.string().optional(),
         image: z.any().optional(),
         product_style: z.enum(['Physical', 'Digital']).optional(),
-        resource_link: z.string().url().optional(),
+        resource_link: z.string().optional(),
     }),
 });
 

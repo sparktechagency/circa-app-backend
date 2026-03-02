@@ -79,6 +79,11 @@ const getMessageFromDB = async (
     { chatId: id, seenBy: { $nin: [user?.id] } },
     { $push: { seenBy: user?.id } },
   );
+  if (seenAllMessage.modifiedCount > 0) {
+    const io = global.socketServer;
+    await RedisHelper.keyDelete(`chatList:${user?.id}:*`);
+    io?.emit(`chatList::${user?.id}`, seenAllMessage);
+  }
   const chat = await Chat.findById(id);
   if (!chat) throw new Error('Chat not found');
   const anotherParticipant = chat.participants.filter(

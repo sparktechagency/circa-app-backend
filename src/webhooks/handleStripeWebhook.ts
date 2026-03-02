@@ -13,17 +13,17 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
             case 'checkout.session.completed':
                 const session = event.data.object;
                 if(session?.metadata?.packageId && session?.metadata?.userId){
-                    await kafkaProducer.sendMessage("user", {type:"purchase-credit",data:session})
+                    await kafkaProducer.sendMessage("circa-user", {type:"purchase-credit",data:session})
                 }
                 if(session?.metadata?.orderId && session?.metadata?.userId){
                     await kafkaProducer.sendMessage("cart", {type:"order-items",data:session})
                 }
                 if(session?.metadata?.planId && session?.metadata?.userId){
-                    await kafkaProducer.sendMessage("user", {type:"plan-upgrade",data:session})
+                    await kafkaProducer.sendMessage("circa-user", {type:"plan-upgrade",data:session})
                 }
                 break;
             case "account.updated":
-                await kafkaProducer.sendMessage("user", {type:"connect-account",data:event.data.object})
+                await kafkaProducer.sendMessage("circa-user", {type:"connect-account",data:event.data.object})
                 break;
             default:
                 console.log(`Unhandled event type ${event.type}`);

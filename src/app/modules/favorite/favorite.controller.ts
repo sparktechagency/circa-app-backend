@@ -6,7 +6,7 @@ import catchAsync from '../../../shared/catchAsync';
 
 const makeFavorite = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await kafkaProducer.sendMessage("user", {type:"make-favorite",data:{user:req.user.id,creator:req.params.id}});
+    const result = await kafkaProducer.sendMessage("circa-user", {type:"make-favorite",data:{user:req.user.id,creator:req.params.id}});
     sendResponse(res, {
         success: true,
         statusCode: 200,

@@ -70,6 +70,18 @@ export type IReport = {
   status: 'active' | 'delete';
 };
 
+
+export type INotificationSettings = {
+  user: Types.ObjectId;
+  messages: boolean;
+  calls: boolean;
+  shop: boolean;
+  gift:boolean
+}
+
+export type NotificationSettingsModel = Model<INotificationSettings>;
+
+
 export type ReportModel = Model<IReport>;
 
 

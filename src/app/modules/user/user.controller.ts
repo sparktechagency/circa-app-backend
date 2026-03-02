@@ -153,9 +153,11 @@ const getFriendsAndFlattersList = catchAsync(
 );
 
 const blockUser = catchAsync(async (req: Request, res: Response) => {
-  await kafkaProducer.sendMessage('user', {
+
+  
+  await kafkaProducer.sendMessage('circa-user', {
     type: 'block-user',
-    data: { user: req.user.id, id: req.body.user },
+    data: { user: req.user, id: req.body.user },
   });
   sendResponse(res, {
     success: true,
@@ -176,7 +178,7 @@ const getBlockList = catchAsync(async (req: Request, res: Response) => {
 });
 
 const reportUser = catchAsync(async (req: Request, res: Response) => {
-  await kafkaProducer.sendMessage('user', {
+  await kafkaProducer.sendMessage('circa-user', {
     type: 'report-user',
     data: { user: req.user, id: req.body.user, reason: req.body.reason },
   });
@@ -209,6 +211,51 @@ const createConnectedAccount = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
+
+const userProfileUsingId = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.getUserProfileFromUsingDb(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Profile data retrieved successfully',
+    data: result,
+  });
+});
+
+
+const updateNotificationsSettings = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.updateNotificationsSettings(req.user, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Notifications data updated successfully',
+    data: result,
+  });
+})
+
+
+const notificationsSettings = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.getNotificationsSettings(req.user);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Notifications data retrieved successfully',
+    data: result,
+  });
+})
+
+
+const searchCreators = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.searchCreators(req.query, req.user);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Creators data retrieved successfully',
+    data: result.creators,
+    pagination: result.pagination,
+  });
+})
+
 export const UserController = {
   createUser,
   getUserProfile,
@@ -225,5 +272,9 @@ export const UserController = {
   getBlockList,
   reportUser,
   getReportList,
-  createConnectedAccount
+  createConnectedAccount,
+  userProfileUsingId,
+  updateNotificationsSettings,
+  notificationsSettings,
+  searchCreators
 };

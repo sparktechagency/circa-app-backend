@@ -66,6 +66,10 @@ router.route("/connected-account").post(auth(USER_ROLES.CREATOR),UserController.
 
 router.route("/creator/:id").get(auth(USER_ROLES.FAN), UserController.getCreatorProfile);
 
+router.get('/user/:id', auth(USER_ROLES.CREATOR), UserController.userProfileUsingId);
 
+router.post('/update-notification',validateRequest(UserValidation.updateNotificationsSettingsZodSchema),auth(), UserController.updateNotificationsSettings);
+router.get('/get-notification', auth(), UserController.notificationsSettings);
 router.route('/upload-file').post(fileUploadHandler(), UserController.uploadFile);
+router.get("/search", auth(USER_ROLES.FAN), validateRequest(UserValidation.searchCreatorsZodSchema), UserController.searchCreators);
 export const UserRoutes = router;
