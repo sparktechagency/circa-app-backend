@@ -19,6 +19,7 @@ import { DashboardRoutes } from '../app/modules/dashboard/dashboard.route';
 import { WalletRoutes } from '../app/modules/wallet/wallet.route';
 import { NotificationRoutes } from '../app/modules/notification/notification.routes';
 import { TransactionRoutes } from '../app/modules/transaction/transaction.route';
+import { CallingRoutes } from '../app/modules/calling/calling.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -101,6 +102,10 @@ const apiRoutes = [
   {
     path:"/transaction",
     route:TransactionRoutes
+  },
+  {
+    path:"/calling",
+    route:CallingRoutes
   }
 ];
 

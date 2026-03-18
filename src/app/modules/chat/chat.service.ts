@@ -10,6 +10,7 @@ import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
 import { RedisHelper } from '../../../tools/redis/redis.helper';
 import { GiftSend } from '../gift/gift.model';
+import { Creator } from '../user/user.model';
 
 const createChatToDB = async (payload: any,user:JwtPayload): Promise<IChat> => {
     const isExistChat: IChat | null = await Chat.findOne({
@@ -32,13 +33,14 @@ const createChatToDB = async (payload: any,user:JwtPayload): Promise<IChat> => {
 }
 
 const getChatFromDB = async (user: JwtPayload, search: string): Promise<IChat[]> => {
+    // await Creator.updateMany({},{amazon_wishlist_link:'https://www.amazon.com/hz/wishlist/intro'})
     const cache = await RedisHelper.redisGet(`myChats:${user.id}`,{search});
     if (cache) return cache;
     let initQuery =  { participants:{$in:[user.id]} }
     const chats: any = await Chat.find(initQuery)
         .populate({
             path: 'participants',
-            select: '_id name image contact',
+            select: '_id name image contact date_of_birth amazon_wishlist_link',
             match: {
             _id: { $ne: user.id }, // Exclude user.id in the populated participants
             ...(search && { name: { $regex: search, $options: 'i' } }), // Apply $regex only if search is valid
@@ -57,6 +59,10 @@ const getChatFromDB = async (user: JwtPayload, search: string): Promise<IChat[]>
             const data = chat?.toObject();
             const subscription = (await Subscription.findOne((user.role == USER_ROLES.CREATOR ? ({creator:user.id,user:data?.participants[0]?._id,status:'active'}) : ({creator:data?.participants[0]?._id,user:user.id,status:'active'})),{plan:1}).populate("plan",'name emoji').lean())?.plan as any  as IPlan
             const unreadMessages = await Message.countDocuments({ chatId: chat?._id, seenBy: { $nin: [user.id] },sender:{ $ne: user.id } });
+            
+            const birthDay = new Date(data?.participants[0]?.date_of_birth)
+            
+            const todayisBirthDay = data.participants[0]?.date_of_birth ? (birthDay.getDate() === new Date().getDate() && birthDay.getMonth() === new Date().getMonth() ):false
             const lastMessage: IMessage | null = await Message.findOne({ chatId: chat?._id })
             .sort({ createdAt: -1 })
             .select('text createdAt sender');
@@ -70,7 +76,9 @@ const getChatFromDB = async (user: JwtPayload, search: string): Promise<IChat[]>
                 plan:subscription,
                 unreadMessages,
                 gift,
-                remaningMessage:messageSession
+                remaningMessage:messageSession,
+                todayisBirthDay,
+                amazon_wishlist_link:data?.participants[0]?.amazon_wishlist_link
             };
         })
     );

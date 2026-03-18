@@ -42,6 +42,11 @@ export default {
   openai: {
     apiKey: process.env.OPENAI_API_KEY
   },
-  cron_job:process.env.CRON_JOB=='true'
+  cron_job:process.env.CRON_JOB=='true',
+
+  agora:{
+    appId: process.env.AGORA_APP_ID,
+    appCertificate: process.env.AGORA_APP_CERTIFICATE
+  }
   
 };

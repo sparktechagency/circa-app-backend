@@ -68,7 +68,7 @@ const sendGiftToCreators = async (user:IUser & {_id:string},gift:IGift&{_id:stri
                 receiver:receiver,
                 chatId:chat._id
             }],{session}),
-            MessageService.sendMessageToDB({chatId:chat._id,sender:user._id as any,gift:gift._id as any}),
+            MessageService.sendMessageToDB({chatId:chat._id,sender:user._id as any,gift:gift._id as any,type:"gift"} as any),
             CreditWallet.findOneAndUpdate({user:user._id},{$inc:{credit:-gift.credit}},{session}),
             WalletServices.updateBalanceOfCreator(receiver,gift.credit,session),
             kafkaProducer.sendMessage("utils",{

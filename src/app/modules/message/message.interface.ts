@@ -5,7 +5,7 @@ export type IMessage = {
   sender: Types.ObjectId;
   text?: string;
   image?: string[];
-  type: 'text' | 'image' | 'document' | 'zoom-link' | 'gift';
+  type: 'text' | 'image' | 'document' | 'zoom-link' | 'gift' | 'call'
   seenBy?: Types.ObjectId[];
   seen?: boolean;
   docs?: string[];

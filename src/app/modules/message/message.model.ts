@@ -33,7 +33,7 @@ const messageSchema = new Schema<IMessage, MessageModel>(
     }],
     type:{
       type:String,
-      enum:['text','image','document','zoom-link','gift'],
+      enum:['text','image','document','zoom-link','gift','call'],
       required:false,
       default:'text'
     },
