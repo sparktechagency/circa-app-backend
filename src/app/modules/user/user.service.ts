@@ -197,7 +197,7 @@ const changeStatusOfCreatorRequest = async (
     return await RedisHelper.keyDelete('creatorRequests:*');
   }
   await CreatorRequest.findOneAndUpdate({ _id: id }, { status: 'Approved' });
-  await kafkaProducer.sendMessage('user', {
+  await kafkaProducer.sendMessage('circa-user', {
     type: 'approve-request',
     data: id,
   });
