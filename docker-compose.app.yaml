@@ -15,7 +15,7 @@ services:
       - ./kong.yaml:/etc/kong/kong.yml:ro
     ports:
       - "${IP_ADDRESS}:${PORT}:8000"
-      - "10.10.7.9:8001:8001"
+      - "${IP_ADDRESS}:${PORT}:8001"
     networks:
       - template-network
 
