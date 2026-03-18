@@ -5,6 +5,7 @@ import { Creator, CreatorRequest, User } from './user.model';
 
 const acceptTheCreatorRequest = async (reqId: string) => {
   try {
+    console.log(reqId);
     let request = await CreatorRequest.findOne({ _id: reqId }).lean();
     if (!request) {
       return;
