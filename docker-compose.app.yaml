@@ -32,8 +32,8 @@ services:
     environment:
       - PORT=5044
       - IP_ADDRESS=0.0.0.0
-      - DATABASE_URL=mongodb://root:1@mongo:27017/embay?authSource=admin
-      - BACKUP_DATABASE_URL=mongodb://mongo:27017/embay
+      # - DATABASE_URL=mongodb://root:1@mongo:27017/embay?authSource=admin
+      # - BACKUP_DATABASE_URL=mongodb://mongo:27017/embay
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - KAFKA_URL=kafka:9092
@@ -50,8 +50,8 @@ services:
     environment:
       - PORT=5043
       - IP_ADDRESS=0.0.0.0
-      - DATABASE_URL=mongodb://root:1@mongo:27017/embay?authSource=admin
-      - BACKUP_DATABASE_URL=mongodb://mongo:27017/embay
+      # - DATABASE_URL=mongodb://root:1@mongo:27017/embay?authSource=admin
+      # - BACKUP_DATABASE_URL=mongodb://mongo:27017/embay
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - KAFKA_URL=kafka:9092
