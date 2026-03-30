@@ -57,6 +57,7 @@ const purchasePackageForCredit = async (user:JwtPayload,packageId:string) => {
         metadata: { userId: user.id, packageId: packageId },
         success_url: 'https://www.example.com/success',
         cancel_url: 'https://www.example.com/cancel',
+        customer_email: user.email
     });
 
     if(!session.url){
